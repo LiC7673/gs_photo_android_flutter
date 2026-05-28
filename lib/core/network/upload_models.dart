@@ -35,12 +35,13 @@ class UploadInitResponse {
     required this.expiresAt,
   });
 
-  factory UploadInitResponse.fromJson(Map<String, dynamic> json) => UploadInitResponse(
-    uploadId: json['upload_id'],
-    chunkSize: json['chunk_size'],
-    totalChunks: json['total_chunks'],
-    expiresAt: DateTime.parse(json['expires_at']),
-  );
+  factory UploadInitResponse.fromJson(Map<String, dynamic> json) =>
+      UploadInitResponse(
+        uploadId: json['upload_id'],
+        chunkSize: json['chunk_size'],
+        totalChunks: json['total_chunks'],
+        expiresAt: DateTime.parse(json['expires_at']),
+      );
   Map<String, dynamic> toJson() => {
     'upload_id': uploadId,
     'chunk_size': chunkSize,
@@ -87,15 +88,16 @@ class UploadProgressResponse {
     required this.chunkStatuses,
   });
 
-  factory UploadProgressResponse.fromJson(Map<String, dynamic> json) => UploadProgressResponse(
-    uploadId: json['upload_id'],
-    filename: json['filename'],
-    fileSize: json['file_size'],
-    totalChunks: json['total_chunks'],
-    receivedChunks: json['received_chunks'],
-    status: json['status'],
-    chunkStatuses: List<int>.from(json['chunk_statuses']),
-  );
+  factory UploadProgressResponse.fromJson(Map<String, dynamic> json) =>
+      UploadProgressResponse(
+        uploadId: json['upload_id'],
+        filename: json['filename'],
+        fileSize: json['file_size'],
+        totalChunks: json['total_chunks'],
+        receivedChunks: json['received_chunks'],
+        status: json['status'],
+        chunkStatuses: List<int>.from(json['chunk_statuses']),
+      );
 }
 
 class MergeRequestPart {
@@ -104,10 +106,7 @@ class MergeRequestPart {
 
   MergeRequestPart({required this.chunkIndex, required this.etag});
 
-  Map<String, dynamic> toJson() => {
-    'chunk_index': chunkIndex,
-    'etag': etag,
-  };
+  Map<String, dynamic> toJson() => {'chunk_index': chunkIndex, 'etag': etag};
 }
 
 class MergeRequest {

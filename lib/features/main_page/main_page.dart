@@ -47,7 +47,7 @@ class _MainScreenState extends State<MainScreen> {
       final file = File(image.path);
       final fileSize = await file.length();
       final bytes = await file.readAsBytes();
-      
+
       const encoder = JsonEncoder.withIndent('  ');
       String log = '--- [1/3] 初始化上传 ---\n';
       setState(() => _testResult = log);
@@ -77,7 +77,7 @@ class _MainScreenState extends State<MainScreen> {
           chunkIndex: i,
           chunkData: chunkData,
         );
-        
+
         parts.add(MergeRequestPart(chunkIndex: i, etag: chunkRes.etag));
         log += '分片 $i 成功: etag=${chunkRes.etag}\n';
         setState(() => _testResult = log);
@@ -95,18 +95,13 @@ class _MainScreenState extends State<MainScreen> {
         parts: parts,
       );
 
-      log += '合并成功:\n${encoder.convert({
-        'file_id': mergeRes.fileId,
-        'file_hash': mergeRes.fileHash,
-        'storage_key': mergeRes.storageKey,
-        'verified': mergeRes.verified,
-      })}\n';
+      log +=
+          '合并成功:\n${encoder.convert({'file_id': mergeRes.fileId, 'file_hash': mergeRes.fileHash, 'storage_key': mergeRes.storageKey, 'verified': mergeRes.verified})}\n';
 
       setState(() {
         _isTesting = false;
         _testResult = log;
       });
-
     } catch (e) {
       setState(() {
         _isTesting = false;
@@ -117,9 +112,6 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -127,10 +119,7 @@ class _MainScreenState extends State<MainScreen> {
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: screenWidth * 0.05, // 5% 左右内边距
-            vertical: 20.0,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -141,40 +130,41 @@ class _MainScreenState extends State<MainScreen> {
                   'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop',
                   'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=1887&auto=format&fit=crop',
                 ],
-                height: screenHeight * 0.22, // 轮播图占据 22% 高度
+                height: 180,
               ),
-              SizedBox(height: screenHeight * 0.03), // 动态间距 3%
+              const SizedBox(height: 24),
               GradientButton(
                 label: '开始创建',
                 onPressed: () {
                   context.push('$homeTabPath/$creationConfigPath');
                 },
-                height: screenHeight * 0.08, // 按钮高度占据 8%
+                height: 56,
               ),
               const TaskCard(
                 title: '家庭生日相册',
                 statusText: 'AI 重建中',
                 progress: 0.78,
                 timeRemaining: '2 分钟',
-                imageUrl: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=2071&auto=format&fit=crop',
+                imageUrl:
+                    'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=2071&auto=format&fit=crop',
               ),
-              
+
               // --- 测试上传服务部分 ---
-              SizedBox(height: screenHeight * 0.02),
+              const SizedBox(height: 16),
               GlassButton(
                 label: _isTesting ? '正在测试...' : '测试文件上传服务',
                 icon: _isTesting ? Icons.sync : Icons.cloud_upload_outlined,
                 onPressed: _isTesting ? () {} : _runUploadTest,
-                height: screenHeight * 0.065,
+                height: 48,
                 opacity: 0.1,
               ),
               if (_testResult.isNotEmpty) ...[
-                SizedBox(height: screenHeight * 0.015),
-                _buildTestResultDisplay(screenWidth),
+                const SizedBox(height: 12),
+                _buildTestResultDisplay(),
               ],
-              // -----------------------
 
-              SizedBox(height: screenHeight * 0.03),
+              // -----------------------
+              const SizedBox(height: 24),
               // 横向排列四个方形磨砂按钮
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -185,29 +175,30 @@ class _MainScreenState extends State<MainScreen> {
                     onPressed: () {
                       context.push('$homeTabPath/$cameraGuidePath');
                     },
-                    size: screenWidth * 0.2, // 方块按钮占据屏幕宽度 20%
+                    size: 76,
                   ),
                   SquareGlassButton(
                     label: '素材整理',
                     icon: Icons.auto_awesome_motion_outlined,
-                    onPressed: () => context.push('$homeTabPath/$localViewerPath'),
-                    size: screenWidth * 0.2,
+                    onPressed: () =>
+                        context.push('$homeTabPath/$localViewerPath'),
+                    size: 76,
                   ),
                   SquareGlassButton(
                     label: '云端同步',
                     icon: Icons.cloud_done_outlined,
                     onPressed: () => debugPrint('点击：云端同步'),
-                    size: screenWidth * 0.2,
+                    size: 76,
                   ),
                   SquareGlassButton(
                     label: '使用说明',
                     icon: Icons.help_outline_rounded,
                     onPressed: () => debugPrint('点击：使用说明'),
-                    size: screenWidth * 0.2,
+                    size: 76,
                   ),
                 ],
               ),
-              SizedBox(height: screenHeight * 0.05), // 底部留白
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -215,10 +206,10 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildTestResultDisplay(double screenWidth) {
+  Widget _buildTestResultDisplay() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(screenWidth * 0.04),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
@@ -227,18 +218,26 @@ class _MainScreenState extends State<MainScreen> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 '服务器响应测试结果:',
-                style: TextStyle(color: Color(0xFF00C6FF), fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Color(0xFF00C6FF),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               SelectableText(
                 _testResult,
-                style: const TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'monospace'),
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                ),
               ),
             ],
           ),

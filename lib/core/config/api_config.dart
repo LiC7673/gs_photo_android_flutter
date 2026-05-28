@@ -2,7 +2,7 @@
 class ApiPaths {
   // A: 公共的 Server Head (例如你的 GS Server 主机地址)
   static const String baseUrl = 'http://211.87.232.134';
-  static const int port=8000;
+  static const int port = 8000;
   // B, C: 具体的业务模块 (例如 3D相册模块)
   static const String albumList = '/album/list';
   static const String moduleCBase = '/core_features';

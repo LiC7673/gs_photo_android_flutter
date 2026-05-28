@@ -6,18 +6,15 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
       backgroundColor: Colors.transparent, // 保持全局背景可见
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           '个人中心',
           style: TextStyle(
-            color: Colors.white, 
+            color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: screenWidth * 0.05,
+            fontSize: 20,
           ),
         ),
         centerTitle: true,
@@ -26,33 +23,31 @@ class ProfilePage extends StatelessWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(screenWidth * 0.05),
+          padding: const EdgeInsets.all(20),
           child: Column(
-          children: [
-            // 1. 个人信息卡片 (基于原型图设计)
-            _buildUserInfoCard(context),
-            
-            SizedBox(height: screenHeight * 0.03),
-            
-            // 2. 功能列表 (预留位)
-            _buildMenuItem(context, Icons.history, '历史记录'),
-            _buildMenuItem(context, Icons.settings_outlined, '通用设置'),
-            _buildMenuItem(context, Icons.info_outline, '关于我们'),
-            
-            SizedBox(height: screenHeight * 0.06),
-            
-            // 3. 退出登录按钮
-            _buildLogoutButton(context),
-          ],
+            children: [
+              // 1. 个人信息卡片 (基于原型图设计)
+              _buildUserInfoCard(context),
+
+              const SizedBox(height: 24),
+
+              // 2. 功能列表 (预留位)
+              _buildMenuItem(Icons.history, '历史记录'),
+              _buildMenuItem(Icons.settings_outlined, '通用设置'),
+              _buildMenuItem(Icons.info_outline, '关于我们'),
+
+              const SizedBox(height: 48),
+
+              // 3. 退出登录按钮
+              _buildLogoutButton(context),
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildUserInfoCard(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
@@ -66,7 +61,7 @@ class ProfilePage extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
-            padding: EdgeInsets.all(screenWidth * 0.05),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: const Color(0xFFFFFFFF).withValues(alpha: 0.05),
               gradient: LinearGradient(
@@ -82,44 +77,50 @@ class ProfilePage extends StatelessWidget {
               children: [
                 // 蓝色头像圆圈
                 Container(
-                  width: screenWidth * 0.18,
-                  height: screenWidth * 0.18,
+                  width: 72,
+                  height: 72,
                   decoration: BoxDecoration(
                     color: const Color(0xFF0072FF).withValues(alpha: 0.8),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFF0072FF).withValues(alpha: 0.3),
-                        blurRadius: 15,
+                        blurRadius: 16,
                         spreadRadius: 2,
                       ),
                     ],
                   ),
-                  child: Icon(Icons.person, size: screenWidth * 0.1, color: Colors.white),
+                  child: const Icon(
+                    Icons.person,
+                    size: 40,
+                    color: Colors.white,
+                  ),
                 ),
-                SizedBox(width: screenWidth * 0.06),
+                const SizedBox(width: 24),
                 // 信息展示区
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         '个人 ID: GS_User888',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: screenWidth * 0.045,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.015),
+                      const SizedBox(height: 12),
                       GestureDetector(
                         onTap: () => debugPrint('点击：修改信息'),
                         child: Text(
                           '修改信息',
                           style: TextStyle(
-                            color: const Color(0xFF00C6FF).withValues(alpha: 0.9),
-                            fontSize: 15,
+                            color: const Color(
+                              0xFF00C6FF,
+                            ).withValues(alpha: 0.9),
+                            fontSize: 16,
                             fontWeight: FontWeight.w500,
                             decoration: TextDecoration.underline,
                           ),
@@ -143,10 +144,18 @@ class ProfilePage extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(16),
         child: ListTile(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           leading: Icon(icon, color: Colors.white.withValues(alpha: 0.7)),
-          title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
-          trailing: Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3)),
+          title: Text(
+            title,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          trailing: Icon(
+            Icons.chevron_right,
+            color: Colors.white.withValues(alpha: 0.3),
+          ),
           onTap: () => debugPrint('点击了：$title'),
         ),
       ),
@@ -154,8 +163,6 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _buildLogoutButton(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return OutlinedButton(
       onPressed: () => Navigator.of(context).pop(), // 简单返回登录页
       style: OutlinedButton.styleFrom(
@@ -163,9 +170,9 @@ class ProfilePage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      child: Text(
-        '退出登录', 
-        style: TextStyle(color: Colors.redAccent, fontSize: screenWidth * 0.04),
+      child: const Text(
+        '退出登录',
+        style: TextStyle(color: Colors.redAccent, fontSize: 16),
       ),
     );
   }

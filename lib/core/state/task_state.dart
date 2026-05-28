@@ -2,31 +2,31 @@ import 'package:flutter/material.dart';
 
 /// 任务状态枚举
 enum TaskStatus {
-  draft,          // 草稿状态（正在选择图片，尚未提交）
+  draft, // 草稿状态（正在选择图片，尚未提交）
   uploadingFiles, // 正在上传文件队列
-  pending,        // 文件就绪，等待服务器调度
-  processing,     // 服务器正在计算/重建中
-  completed,      // 任务完成
-  failed,         // 任务失败
+  pending, // 文件就绪，等待服务器调度
+  processing, // 服务器正在计算/重建中
+  completed, // 任务完成
+  failed, // 任务失败
 }
 
 /// 文件同步状态枚举
 enum FileSyncStatus {
-  localOnly,    // 仅在本地（待上传）
-  uploading,    // 正在上传
-  synced,       // 本地和云端一致（已上传）
-  downloading,  // 正在从云端下载到本地
-  cloudOnly,    // 仅在云端（本地被清理或在新设备登录）
+  localOnly, // 仅在本地（待上传）
+  uploading, // 正在上传
+  synced, // 本地和云端一致（已上传）
+  downloading, // 正在从云端下载到本地
+  cloudOnly, // 仅在云端（本地被清理或在新设备登录）
 }
 
 /// 文件存储模型
 class StorageFile {
-  final String fileId;       // 文件唯一标识
-  final String? localPath;   // 本地绝对路径或相对路径
-  final String? remoteUrl;   // 对象存储访问链接
+  final String fileId; // 文件唯一标识
+  final String? localPath; // 本地绝对路径或相对路径
+  final String? remoteUrl; // 对象存储访问链接
   final FileSyncStatus status;
-  final String md5;          // 用于校验文件完整性
-  final int size;            // 文件大小 (bytes)
+  final String md5; // 用于校验文件完整性
+  final int size; // 文件大小 (bytes)
 
   StorageFile({
     required this.fileId,
@@ -38,8 +38,9 @@ class StorageFile {
   });
 
   /// 检查本地是否可用
-  bool get isLocalAvailable => 
-      localPath != null && (status == FileSyncStatus.synced || status == FileSyncStatus.localOnly);
+  bool get isLocalAvailable =>
+      localPath != null &&
+      (status == FileSyncStatus.synced || status == FileSyncStatus.localOnly);
 
   StorageFile copyWith({
     String? localPath,
@@ -68,7 +69,7 @@ class ProcessingTask {
   final DateTime? updatedAt;
 
   // 修复 1：将其声明为可空类型（加问号），因为任务刚创建时没有结果文件
-  final StorageFile? result_ply;
+  final StorageFile? resultPly;
 
   ProcessingTask({
     required this.taskId,
@@ -78,14 +79,14 @@ class ProcessingTask {
     required this.status,
     required this.createdAt,
     this.updatedAt,
-    this.result_ply, // 修复 2：将其加入构造函数
+    this.resultPly, // 修复 2：将其加入构造函数
   });
 
   ProcessingTask copyWith({
     TaskStatus? status,
     List<StorageFile>? files,
     DateTime? updatedAt,
-    StorageFile? result_ply, // 修复 3：在 copyWith 中提供修改它的入口
+    StorageFile? resultPly, // 修复 3：在 copyWith 中提供修改它的入口
   }) {
     return ProcessingTask(
       taskId: taskId,
@@ -95,7 +96,7 @@ class ProcessingTask {
       status: status ?? this.status,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      result_ply: result_ply ?? this.result_ply, // 修复 4：保留原有值或更新新值
+      resultPly: resultPly ?? this.resultPly, // 修复 4：保留原有值或更新新值
     );
   }
 }
@@ -129,16 +130,18 @@ class TaskState extends ChangeNotifier {
   void updateTaskStatus(String taskId, TaskStatus status) {
     final task = _tasks[taskId];
     if (task != null) {
-      _tasks[taskId] = task.copyWith(
-        status: status,
-        updatedAt: DateTime.now(),
-      );
+      _tasks[taskId] = task.copyWith(status: status, updatedAt: DateTime.now());
       notifyListeners();
     }
   }
 
   /// 更新任务中的文件状态
-  void updateFileStatus(String taskId, String fileId, FileSyncStatus status, {String? remoteUrl}) {
+  void updateFileStatus(
+    String taskId,
+    String fileId,
+    FileSyncStatus status, {
+    String? remoteUrl,
+  }) {
     final task = _tasks[taskId];
     if (task != null) {
       final fileIndex = task.files.indexWhere((f) => f.fileId == fileId);

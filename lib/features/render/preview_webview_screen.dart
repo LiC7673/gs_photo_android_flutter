@@ -18,9 +18,10 @@ class _PreviewWebViewScreenState extends State<PreviewWebViewScreen> {
   @override
   void initState() {
     super.initState();
-    
-    final String path = widget.modelUrl ?? '${AppConfig.baseUrl}${AppConfig.previewPath}';
-    
+
+    final String modelPath =
+        widget.modelUrl ?? '${AppConfig.baseUrl}${AppConfig.previewPath}';
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
@@ -31,9 +32,7 @@ class _PreviewWebViewScreenState extends State<PreviewWebViewScreen> {
               _isLoading = false;
             });
             // 页面加载完成后注入模型地址并触发初始化
-            // 默认加载本地 assets 里的模型
-            const String localModelPath = 'assets/Pointcloud/point_cloud.ply';
-            _controller.runJavaScript("window.initViewer('$localModelPath', true);");
+            _controller.runJavaScript("window.initViewer('$modelPath', true);");
           },
         ),
       )
@@ -50,10 +49,7 @@ class _PreviewWebViewScreenState extends State<PreviewWebViewScreen> {
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),
     );

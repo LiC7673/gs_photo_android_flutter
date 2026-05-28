@@ -20,11 +20,15 @@ class ReconstructionService {
         AppConfig.reconstructionStaPath,
         data: {
           "storage_key": storageKey,
-          "params": jsonEncode(extraParams ?? {
-            "cuda_device": "1",
-            "python_path": "/data1/lzh/anaconda3/envs/anysplat/bin/python",
-            "anysplat_path": "/data1/lzh/lzy/AnySplat"
-          }),
+          "params": jsonEncode(
+            extraParams ??
+                {
+                  "cuda_device": "1",
+                  "python_path":
+                      "/data1/lzh/anaconda3/envs/anysplat/bin/python",
+                  "anysplat_path": "/data1/lzh/lzy/AnySplat",
+                },
+          ),
         },
       );
 
@@ -53,9 +57,7 @@ class ReconstructionService {
     try {
       final response = await _adapter.get(
         "${AppConfig.reconstructionDownloadPath}/$taskId",
-        options: Options(
-          responseType: ResponseType.bytes,
-        ),
+        options: Options(responseType: ResponseType.bytes),
       );
 
       if (response.statusCode == 200) {

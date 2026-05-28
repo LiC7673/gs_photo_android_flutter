@@ -19,14 +19,13 @@ class GlassButton extends StatelessWidget {
     this.width = double.infinity,
     this.height,
     this.borderRadius = 16.0,
-    this.blur = 10.0,
+    this.blur = 12.0,
     this.opacity = 0.2,
   });
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final buttonHeight = height ?? screenHeight * 0.065;
+    final buttonHeight = height ?? 48.0;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
@@ -57,7 +56,7 @@ class GlassButton extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // 3. 交互按钮层
           Material(
             color: Colors.transparent,
@@ -71,13 +70,13 @@ class GlassButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) ...[
-                      Icon(icon, size: buttonHeight * 0.6, color: Colors.white),
-                      SizedBox(width: buttonHeight * 0.3),
+                      Icon(icon, size: 24, color: Colors.white),
+                      const SizedBox(width: 12),
                     ],
                     Text(
                       label,
                       style: TextStyle(
-                        fontSize: buttonHeight * 0.45,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                         shadows: const [

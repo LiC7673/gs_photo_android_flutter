@@ -17,8 +17,7 @@ class SquareGlassButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final buttonSize = size ?? screenWidth * 0.22;
+    final buttonSize = size ?? 76.0;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -57,23 +56,19 @@ class SquareGlassButton extends StatelessWidget {
                       end: Alignment.bottomCenter,
                       colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
                     ).createShader(bounds),
-                    child: Icon(
-                      icon,
-                      size: buttonSize * 0.45, // 图标大小根据按钮大小自动缩放
-                      color: Colors.white,
-                    ),
+                    child: Icon(icon, size: 32, color: Colors.white),
                   ),
                 ),
               ),
             ),
           ),
         ),
-        SizedBox(height: screenWidth * 0.025),
+        const SizedBox(height: 8),
         Text(
           label,
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.9),
-            fontSize: buttonSize * 0.15,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
           ),

@@ -5,11 +5,7 @@ class CustomCarousel extends StatefulWidget {
   final List<String> images;
   final double height;
 
-  const CustomCarousel({
-    super.key,
-    required this.images,
-    this.height = 200.0,
-  });
+  const CustomCarousel({super.key, required this.images, this.height = 200.0});
 
   @override
   State<CustomCarousel> createState() => _CustomCarouselState();
@@ -61,8 +57,8 @@ class _CustomCarouselState extends State<CustomCarousel> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -87,14 +83,17 @@ class _CustomCarouselState extends State<CustomCarousel> {
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       color: Colors.grey[800],
-                      child: const Icon(Icons.broken_image, color: Colors.white),
+                      child: const Icon(
+                        Icons.broken_image,
+                        color: Colors.white,
+                      ),
                     );
                   },
                 );
               },
             ),
           ),
-          
+
           // 指示器
           Padding(
             padding: const EdgeInsets.only(bottom: 12.0),
@@ -112,8 +111,7 @@ class _CustomCarouselState extends State<CustomCarousel> {
   }
 
   Widget _buildIndicator(bool isActive) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final indicatorHeight = screenWidth * 0.02;
+    const indicatorHeight = 8.0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -121,7 +119,9 @@ class _CustomCarouselState extends State<CustomCarousel> {
       height: indicatorHeight,
       width: isActive ? indicatorHeight * 3 : indicatorHeight,
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF00C6FF) : Colors.white.withValues(alpha: 0.5),
+        color: isActive
+            ? const Color(0xFF00C6FF)
+            : Colors.white.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(4),
       ),
     );
