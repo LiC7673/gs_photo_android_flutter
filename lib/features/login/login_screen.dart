@@ -27,16 +27,19 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
+    debugPrint('[API] trigger button=login');
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
+      debugPrint('[API] result button=login skipped reason=empty_credentials');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('请输入用户名和密码')));
       return;
     }
     setState(() => _isLoading = true);
+    debugPrint('[API] result button=login route=$homeTabPath');
     context.go(homeTabPath);
   }
 
@@ -65,6 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // }
   //
   Future<void> _handleRegister() async {
+    debugPrint('[API] trigger button=register');
     setState(() => _isLoading = true);
     try {
       // 注册时也发送 "login in" 作为测试
@@ -74,12 +78,14 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted) {
+        debugPrint('[API] result button=register success');
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('注册成功: ${response.data}')));
       }
     } catch (e) {
       if (mounted) {
+        debugPrint('[API] result button=register failed error=$e');
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('请求失败: $e')));

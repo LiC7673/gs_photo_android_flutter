@@ -92,6 +92,10 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
 
   Future<void> _startProcess() async {
     if (_selectedImages.isEmpty) return;
+    debugPrint(
+      '[API] trigger button=start_reconstruction '
+      'images=${_selectedImages.length}',
+    );
 
     final taskState = Provider.of<TaskState>(context, listen: false);
     final String localTaskId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -122,6 +126,9 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
     if (zipPath == null) {
       taskState.updateTaskStatus(localTaskId, TaskStatus.failed);
       setState(() => _currentStatus = 'failed');
+      debugPrint(
+        '[API] result button=start_reconstruction failed reason=compress',
+      );
       return;
     }
 
@@ -161,6 +168,9 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
       if (serverTaskId == null) {
         taskState.updateTaskStatus(localTaskId, TaskStatus.failed);
         setState(() => _currentStatus = 'failed');
+        debugPrint(
+          '[API] result button=start_reconstruction failed reason=no_task_id',
+        );
         return;
       }
 
@@ -179,12 +189,16 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
 
       // 4. 轮询状态
       _startPolling(serverTaskId, localTaskId);
+      debugPrint(
+        '[API] result button=start_reconstruction taskId=$serverTaskId',
+      );
 
       // 清理临时 zip
       final zipFile = File(zipPath);
       if (await zipFile.exists()) await zipFile.delete();
     } catch (e) {
       debugPrint('处理流程失败: $e');
+      debugPrint('[API] result button=start_reconstruction failed error=$e');
       taskState.updateTaskStatus(localTaskId, TaskStatus.failed);
       setState(() => _currentStatus = 'failed');
     }

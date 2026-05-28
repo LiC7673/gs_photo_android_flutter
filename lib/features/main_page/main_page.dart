@@ -29,6 +29,7 @@ class _MainScreenState extends State<MainScreen> {
   bool _isTesting = false;
 
   Future<void> _runUploadTest() async {
+    debugPrint('[API] trigger button=test_upload_service');
     setState(() {
       _isTesting = true;
       _testResult = '正在选择图片...';
@@ -41,6 +42,9 @@ class _MainScreenState extends State<MainScreen> {
           _isTesting = false;
           _testResult = '已取消图片选择';
         });
+        debugPrint(
+          '[API] result button=test_upload_service skipped reason=no_file',
+        );
         return;
       }
 
@@ -102,11 +106,13 @@ class _MainScreenState extends State<MainScreen> {
         _isTesting = false;
         _testResult = log;
       });
+      debugPrint('[API] result button=test_upload_service success');
     } catch (e) {
       setState(() {
         _isTesting = false;
         _testResult += '\n[ERROR] 操作失败:\n$e';
       });
+      debugPrint('[API] result button=test_upload_service failed error=$e');
     }
   }
 

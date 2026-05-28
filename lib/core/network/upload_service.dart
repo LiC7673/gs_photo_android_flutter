@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import '../config/upload_file_config.dart';
 import 'dio_adapter.dart';
@@ -41,6 +42,7 @@ class UploadService {
     final file = File(filePath);
     final fileName = p.basename(filePath);
     final fileSize = await file.length();
+    debugPrint('[API] trigger initializeUpload file=$fileName size=$fileSize');
     final fileHash = await _calculateFileHash(file);
     final mimeType = _getMimeType(filePath);
 
@@ -68,7 +70,12 @@ class UploadService {
     // debugPrint('➡️ [Reponse]: ${jsonEncode(response.data)}');
     // debugPrint('========================================');
     // // debugPrint()
-    return UploadInitResponse.fromJson(response.data);
+    final result = UploadInitResponse.fromJson(response.data);
+    debugPrint(
+      '[API] result initializeUpload uploadId=${result.uploadId} '
+      'chunks=${result.totalChunks}',
+    );
+    return result;
   }
 
   /// 上传分
@@ -77,6 +84,10 @@ class UploadService {
     required int chunkIndex,
     required List<int> chunkData,
   }) async {
+    debugPrint(
+      '[API] trigger uploadChunk uploadId=$uploadId '
+      'chunkIndex=$chunkIndex size=${chunkData.length}',
+    );
     final response = await _dioAdapter.put(
       UploadFileConfig.getUploadChunkUrl(uploadId),
       data: Stream.fromIterable([chunkData]),
@@ -87,15 +98,23 @@ class UploadService {
       ),
     );
 
-    return ChunkResponse.fromJson(response.data);
+    final result = ChunkResponse.fromJson(response.data);
+    debugPrint(
+      '[API] result uploadChunk uploadId=$uploadId '
+      'chunkIndex=$chunkIndex etag=${result.etag}',
+    );
+    return result;
   }
 
   /// 查询上传进度
   Future<UploadProgressResponse> checkProgress(String uploadId) async {
+    debugPrint('[API] trigger checkUploadProgress uploadId=$uploadId');
     final response = await _dioAdapter.get(
       UploadFileConfig.getUploadProgressUrl(uploadId),
     );
-    return UploadProgressResponse.fromJson(response.data);
+    final result = UploadProgressResponse.fromJson(response.data);
+    debugPrint('[API] result checkUploadProgress uploadId=$uploadId');
+    return result;
   }
 
   /// 合并分片
@@ -105,6 +124,9 @@ class UploadService {
     String? expectedHash,
     required List<MergeRequestPart> parts,
   }) async {
+    debugPrint(
+      '[API] trigger mergeChunks uploadId=$uploadId parts=${parts.length}',
+    );
     final request = MergeRequest(
       expectedHash: expectedHash,
       expectedSize: expectedSize,
@@ -116,12 +138,19 @@ class UploadService {
       data: request.toJson(),
     );
 
-    return MergeResponse.fromJson(response.data);
+    final result = MergeResponse.fromJson(response.data);
+    debugPrint(
+      '[API] result mergeChunks uploadId=$uploadId '
+      'fileId=${result.fileId} verified=${result.verified}',
+    );
+    return result;
   }
 
   /// 取消上传
   Future<void> cancelUpload(String fileId) async {
+    debugPrint('[API] trigger cancelUpload fileId=$fileId');
     await _dioAdapter.post(UploadFileConfig.getUploadCancelUrl(fileId));
+    debugPrint('[API] result cancelUpload fileId=$fileId');
   }
 
   /// 高层封装：完整上传文件流程
@@ -131,6 +160,9 @@ class UploadService {
   }) async {
     final file = File(filePath);
     final fileSize = await file.length();
+    debugPrint(
+      '[API] trigger uploadFile file=${p.basename(filePath)} size=$fileSize',
+    );
 
     // 1. 初始化
     final initData = await initializeUpload(filePath);
@@ -165,11 +197,16 @@ class UploadService {
 
     // 3. 合并
     final fileHash = md5.convert(bytes).toString(); // 后端合并请求需要的是 MD5
-    return await mergeChunks(
+    final result = await mergeChunks(
       uploadId: uploadId,
       expectedSize: fileSize,
       expectedHash: fileHash,
       parts: parts,
     );
+    debugPrint(
+      '[API] result uploadFile file=${p.basename(filePath)} '
+      'storageKey=${result.storageKey}',
+    );
+    return result;
   }
 }

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 import '../state/user_state.dart';
 
@@ -23,12 +24,25 @@ class DioAdapter {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          debugPrint('[API] trigger ${options.method} ${options.uri}');
           return handler.next(options);
+        },
+        onResponse: (response, handler) {
+          debugPrint(
+            '[API] success ${response.requestOptions.method} '
+            '${response.requestOptions.uri} status=${response.statusCode}',
+          );
+          return handler.next(response);
+        },
+        onError: (error, handler) {
+          debugPrint(
+            '[API] failure ${error.requestOptions.method} '
+            '${error.requestOptions.uri} error=${error.message}',
+          );
+          return handler.next(error);
         },
       ),
     );
-
-    dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
   }
 
   Future<Response<T>> get<T>(

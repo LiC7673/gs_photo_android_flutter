@@ -15,6 +15,7 @@ class ReconstructionService {
     required String storageKey,
     Map<String, dynamic>? extraParams,
   }) async {
+    debugPrint('[API] trigger startReconstruction storageKey=$storageKey');
     try {
       final response = await _adapter.post(
         AppConfig.reconstructionStaPath,
@@ -32,28 +33,36 @@ class ReconstructionService {
         },
       );
 
-      return response.data["task_id"];
+      final taskId = response.data["task_id"];
+      debugPrint('[API] result startReconstruction taskId=$taskId');
+      return taskId;
     } catch (e) {
-      debugPrint('启动重建失败: $e');
+      debugPrint('[API] result startReconstruction failed error=$e');
       return null;
     }
   }
 
   /// 2. 查询状态
   Future<Map<String, dynamic>?> checkStatus(String taskId) async {
+    debugPrint('[API] trigger checkReconstructionStatus taskId=$taskId');
     try {
       final response = await _adapter.get(
         "${AppConfig.reconstructionStatusPath}/$taskId",
       );
+      debugPrint(
+        '[API] result checkReconstructionStatus taskId=$taskId '
+        'status=${response.data['status']}',
+      );
       return response.data;
     } catch (e) {
-      debugPrint('查询状态失败: $e');
+      debugPrint('[API] result checkReconstructionStatus failed error=$e');
       return null;
     }
   }
 
   /// 3. 下载模型结果
   Future<File?> downloadResult(String taskId) async {
+    debugPrint('[API] trigger downloadReconstructionResult taskId=$taskId');
     try {
       final response = await _adapter.get(
         "${AppConfig.reconstructionDownloadPath}/$taskId",
@@ -65,11 +74,19 @@ class ReconstructionService {
         final filePath = p.join(directory.path, 'reconstructed_$taskId.ply');
         final file = File(filePath);
         await file.writeAsBytes(response.data);
+        debugPrint(
+          '[API] result downloadReconstructionResult taskId=$taskId '
+          'path=$filePath',
+        );
         return file;
       }
+      debugPrint(
+        '[API] result downloadReconstructionResult taskId=$taskId '
+        'status=${response.statusCode}',
+      );
       return null;
     } catch (e) {
-      debugPrint('下载模型失败: $e');
+      debugPrint('[API] result downloadReconstructionResult failed error=$e');
       return null;
     }
   }
