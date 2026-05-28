@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../core/network/api_client.dart';
+import 'package:provider/provider.dart';
+import '../../core/network/auth_service.dart';
 import '../../core/widgets/background/sci_fi_background.dart';
 import '../../core/widgets/buttons/glass_button.dart';
 import '../../core/widgets/buttons/gradient_button.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/router/route_config.dart';
+import '../../core/state/user_state.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,30 +16,52 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final ApiClient _apiClient = ApiClient();
+  final AuthService _authService = AuthService();
   final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
   @override
   void dispose() {
     _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _handleLogin() async {
+    debugPrint('[API] trigger button=login');
     final username = _usernameController.text.trim();
-    final password = _passwordController.text.trim();
+    final password = _passwordController.text;
 
     if (username.isEmpty || password.isEmpty) {
+      debugPrint('[API] result button=login skipped reason=empty_credentials');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('请输入用户名和密码')));
       return;
     }
     setState(() => _isLoading = true);
-    context.go(homeTabPath);
+    try {
+      final session = await _authService.login(
+        username: username,
+        password: password,
+      );
+      await UserState.instance.saveSession(session);
+      if (!mounted) return;
+      debugPrint('[API] result button=login route=$homeTabPath');
+      context.go(homeTabPath);
+    } catch (e) {
+      if (!mounted) return;
+      final message = _authService.errorMessage(e);
+      debugPrint('[API] result button=login failed error=$message');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('登录失败: $message')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   //   try {
@@ -65,24 +89,42 @@ class _LoginScreenState extends State<LoginScreen> {
   // }
   //
   Future<void> _handleRegister() async {
+    debugPrint('[API] trigger button=register');
+    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (username.isEmpty || email.isEmpty || password.isEmpty) {
+      debugPrint('[API] result button=register skipped reason=empty_fields');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请输入用户名、邮箱和密码')));
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
-      // 注册时也发送 "login in" 作为测试
-      final response = await _apiClient.post(
-        '/register',
-        data: {"message": "login in"},
+      final session = await _authService.register(
+        username: username,
+        email: email,
+        password: password,
       );
+      await UserState.instance.saveSession(session);
 
       if (mounted) {
+        debugPrint('[API] result button=register success');
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('注册成功: ${response.data}')));
+        ).showSnackBar(const SnackBar(content: Text('注册成功')));
+        context.go(homeTabPath);
       }
     } catch (e) {
       if (mounted) {
+        final message = _authService.errorMessage(e);
+        debugPrint('[API] result button=register failed error=$message');
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('请求失败: $e')));
+        ).showSnackBar(SnackBar(content: Text('注册失败: $message')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -91,6 +133,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userState = context.watch<UserState>();
+
+    if (userState.isLoggedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go(homeTabPath);
+      });
+    }
+
     return Scaffold(
       body: SciFiBackground(
         child: SafeArea(
@@ -115,6 +165,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _usernameController,
                     hint: '用户名',
                     icon: Icons.person_outline,
+                  ),
+                  const SizedBox(height: 20),
+
+                  _buildTextField(
+                    controller: _emailController,
+                    hint: '邮箱（注册时必填）',
+                    icon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: 20),
 
@@ -160,6 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
     required String hint,
     required IconData icon,
     bool isPassword = false,
+    TextInputType? keyboardType,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -170,6 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: TextField(
         controller: controller,
         obscureText: isPassword,
+        keyboardType: keyboardType,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: hint,

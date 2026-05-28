@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 import '../state/user_state.dart';
 
@@ -23,12 +24,29 @@ class DioAdapter {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          debugPrint('[API] trigger ${options.method} ${options.uri}');
           return handler.next(options);
+        },
+        onResponse: (response, handler) {
+          debugPrint(
+            '[API] success ${response.requestOptions.method} '
+            '${response.requestOptions.uri} status=${response.statusCode}',
+          );
+          return handler.next(response);
+        },
+        onError: (error, handler) {
+          debugPrint(
+            '[API] failure ${error.requestOptions.method} '
+            '${error.requestOptions.uri} error=${error.message}',
+          );
+          return handler.next(error);
         },
       ),
     );
+  }
 
-    dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
+  String _normalizePath(String path) {
+    return path.startsWith('/') ? path.substring(1) : path;
   }
 
   Future<Response<T>> get<T>(
@@ -36,7 +54,11 @@ class DioAdapter {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
-    return dio.get<T>(path, queryParameters: queryParameters, options: options);
+    return dio.get<T>(
+      _normalizePath(path),
+      queryParameters: queryParameters,
+      options: options,
+    );
   }
 
   Future<Response<T>> post<T>(
@@ -46,7 +68,7 @@ class DioAdapter {
     Options? options,
   }) async {
     return dio.post<T>(
-      path,
+      _normalizePath(path),
       data: data,
       queryParameters: queryParameters,
       options: options,
@@ -60,7 +82,7 @@ class DioAdapter {
     Options? options,
   }) async {
     return dio.put<T>(
-      path,
+      _normalizePath(path),
       data: data,
       queryParameters: queryParameters,
       options: options,
@@ -74,7 +96,7 @@ class DioAdapter {
     Options? options,
   }) async {
     return dio.delete<T>(
-      path,
+      _normalizePath(path),
       data: data,
       queryParameters: queryParameters,
       options: options,

@@ -5,7 +5,9 @@ import 'core/widgets/bar/custom_nav_bar.dart';
 import 'core/widgets/background/sci_fi_background.dart';
 import 'core/router/route_adapter.dart';
 import 'core/router/route_config.dart';
+import 'core/network/auth_service.dart';
 import 'core/state/task_state.dart';
+import 'core/state/user_state.dart';
 import 'package:go_router/go_router.dart';
 
 const Color _appBackgroundColor = Color(0xFF03081C);
@@ -20,9 +22,22 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
+  await UserState.instance.restoreSession();
+  if (UserState.instance.token != null) {
+    try {
+      final user = await AuthService().fetchCurrentUser();
+      await UserState.instance.updateUser(user);
+    } catch (e) {
+      debugPrint('[API] result startup_auth_check failed error=$e');
+      await UserState.instance.logout();
+    }
+  }
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => TaskState())],
+      providers: [
+        ChangeNotifierProvider.value(value: UserState.instance),
+        ChangeNotifierProvider(create: (_) => TaskState()),
+      ],
       child: const MyApp(),
     ),
   );

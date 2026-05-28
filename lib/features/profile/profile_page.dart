@@ -1,5 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../core/router/route_config.dart';
+import '../../core/state/user_state.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -48,6 +52,10 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _buildUserInfoCard(BuildContext context) {
+    final user = context.watch<UserState>().user;
+    final displayName = user?.displayName ?? '未登录';
+    final email = user?.email ?? '';
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
@@ -102,8 +110,8 @@ class ProfilePage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        '个人 ID: GS_User888',
+                      Text(
+                        displayName,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -112,18 +120,11 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      GestureDetector(
-                        onTap: () => debugPrint('点击：修改信息'),
-                        child: Text(
-                          '修改信息',
-                          style: TextStyle(
-                            color: const Color(
-                              0xFF00C6FF,
-                            ).withValues(alpha: 0.9),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            decoration: TextDecoration.underline,
-                          ),
+                      Text(
+                        email,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -164,7 +165,10 @@ class ProfilePage extends StatelessWidget {
 
   Widget _buildLogoutButton(BuildContext context) {
     return OutlinedButton(
-      onPressed: () => Navigator.of(context).pop(), // 简单返回登录页
+      onPressed: () async {
+        await UserState.instance.logout();
+        if (context.mounted) context.go(loginPath);
+      },
       style: OutlinedButton.styleFrom(
         side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),

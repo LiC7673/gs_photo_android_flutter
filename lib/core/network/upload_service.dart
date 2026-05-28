@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import '../config/upload_file_config.dart';
 import 'dio_adapter.dart';
@@ -32,8 +33,13 @@ class UploadService {
 
   /// 计算文件 SHA256 哈希
   Future<String> _calculateFileHash(File file) async {
-    final bytes = await file.readAsBytes();
-    return sha256.convert(bytes).toString();
+    final digest = await sha256.bind(file.openRead()).first;
+    return digest.toString();
+  }
+
+  Future<String> _calculateMd5Hash(File file) async {
+    final digest = await md5.bind(file.openRead()).first;
+    return digest.toString();
   }
 
   /// 初始化上传
@@ -41,6 +47,7 @@ class UploadService {
     final file = File(filePath);
     final fileName = p.basename(filePath);
     final fileSize = await file.length();
+    debugPrint('[API] trigger initializeUpload file=$fileName size=$fileSize');
     final fileHash = await _calculateFileHash(file);
     final mimeType = _getMimeType(filePath);
 
@@ -68,7 +75,12 @@ class UploadService {
     // debugPrint('➡️ [Reponse]: ${jsonEncode(response.data)}');
     // debugPrint('========================================');
     // // debugPrint()
-    return UploadInitResponse.fromJson(response.data);
+    final result = UploadInitResponse.fromJson(response.data);
+    debugPrint(
+      '[API] result initializeUpload uploadId=${result.uploadId} '
+      'chunks=${result.totalChunks}',
+    );
+    return result;
   }
 
   /// 上传分
@@ -77,6 +89,10 @@ class UploadService {
     required int chunkIndex,
     required List<int> chunkData,
   }) async {
+    debugPrint(
+      '[API] trigger uploadChunk uploadId=$uploadId '
+      'chunkIndex=$chunkIndex size=${chunkData.length}',
+    );
     final response = await _dioAdapter.put(
       UploadFileConfig.getUploadChunkUrl(uploadId),
       data: Stream.fromIterable([chunkData]),
@@ -87,15 +103,23 @@ class UploadService {
       ),
     );
 
-    return ChunkResponse.fromJson(response.data);
+    final result = ChunkResponse.fromJson(response.data);
+    debugPrint(
+      '[API] result uploadChunk uploadId=$uploadId '
+      'chunkIndex=$chunkIndex etag=${result.etag}',
+    );
+    return result;
   }
 
   /// 查询上传进度
   Future<UploadProgressResponse> checkProgress(String uploadId) async {
+    debugPrint('[API] trigger checkUploadProgress uploadId=$uploadId');
     final response = await _dioAdapter.get(
       UploadFileConfig.getUploadProgressUrl(uploadId),
     );
-    return UploadProgressResponse.fromJson(response.data);
+    final result = UploadProgressResponse.fromJson(response.data);
+    debugPrint('[API] result checkUploadProgress uploadId=$uploadId');
+    return result;
   }
 
   /// 合并分片
@@ -105,6 +129,9 @@ class UploadService {
     String? expectedHash,
     required List<MergeRequestPart> parts,
   }) async {
+    debugPrint(
+      '[API] trigger mergeChunks uploadId=$uploadId parts=${parts.length}',
+    );
     final request = MergeRequest(
       expectedHash: expectedHash,
       expectedSize: expectedSize,
@@ -116,12 +143,19 @@ class UploadService {
       data: request.toJson(),
     );
 
-    return MergeResponse.fromJson(response.data);
+    final result = MergeResponse.fromJson(response.data);
+    debugPrint(
+      '[API] result mergeChunks uploadId=$uploadId '
+      'fileId=${result.fileId} verified=${result.verified}',
+    );
+    return result;
   }
 
   /// 取消上传
   Future<void> cancelUpload(String fileId) async {
+    debugPrint('[API] trigger cancelUpload fileId=$fileId');
     await _dioAdapter.post(UploadFileConfig.getUploadCancelUrl(fileId));
+    debugPrint('[API] result cancelUpload fileId=$fileId');
   }
 
   /// 高层封装：完整上传文件流程
@@ -131,6 +165,9 @@ class UploadService {
   }) async {
     final file = File(filePath);
     final fileSize = await file.length();
+    debugPrint(
+      '[API] trigger uploadFile file=${p.basename(filePath)} size=$fileSize',
+    );
 
     // 1. 初始化
     final initData = await initializeUpload(filePath);
@@ -141,35 +178,43 @@ class UploadService {
     List<MergeRequestPart> parts = [];
 
     // 2. 分片上传
-    final bytes = await file.readAsBytes();
-    for (int i = 0; i < totalChunks; i++) {
-      int start = i * chunkSize;
-      int end = (i + 1) * chunkSize;
-      if (end > fileSize) end = fileSize;
+    final reader = await file.open();
+    try {
+      for (int i = 0; i < totalChunks; i++) {
+        final remaining = fileSize - (i * chunkSize);
+        final readSize = remaining < chunkSize ? remaining : chunkSize;
 
-      final chunkData = bytes.sublist(start, end);
+        final chunkData = await reader.read(readSize);
 
-      // 可以先检查进度，实现断点续传（此处简化为直接上传）
-      final chunkRes = await uploadChunk(
-        uploadId: uploadId,
-        chunkIndex: i,
-        chunkData: chunkData,
-      );
+        // 可以先检查进度，实现断点续传（此处简化为直接上传）
+        final chunkRes = await uploadChunk(
+          uploadId: uploadId,
+          chunkIndex: i,
+          chunkData: chunkData,
+        );
 
-      parts.add(MergeRequestPart(chunkIndex: i, etag: chunkRes.etag));
+        parts.add(MergeRequestPart(chunkIndex: i, etag: chunkRes.etag));
 
-      if (onProgress != null) {
-        onProgress((i + 1) / totalChunks);
+        if (onProgress != null) {
+          onProgress((i + 1) / totalChunks);
+        }
       }
+    } finally {
+      await reader.close();
     }
 
     // 3. 合并
-    final fileHash = md5.convert(bytes).toString(); // 后端合并请求需要的是 MD5
-    return await mergeChunks(
+    final fileHash = await _calculateMd5Hash(file); // 后端合并请求需要的是 MD5
+    final result = await mergeChunks(
       uploadId: uploadId,
       expectedSize: fileSize,
       expectedHash: fileHash,
       parts: parts,
     );
+    debugPrint(
+      '[API] result uploadFile file=${p.basename(filePath)} '
+      'storageKey=${result.storageKey}',
+    );
+    return result;
   }
 }
