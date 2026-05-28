@@ -619,6 +619,27 @@ class _ResultSectionState extends State<_ResultSection> {
   }
 
   Future<void> _deleteLocalResult() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF0B1026),
+        title: const Text('删除本地结果'),
+        content: const Text('确定要删除本地重建结果文件吗？删除后可以重新下载。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('删除', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (!mounted) return;
+
     final path = _localPath;
     if (path != null) {
       final file = File(path);
