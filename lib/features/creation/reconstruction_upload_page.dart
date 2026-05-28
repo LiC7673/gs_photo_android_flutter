@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:archive/archive_io.dart';
@@ -12,6 +13,23 @@ import '../../core/widgets/background/sci_fi_background.dart';
 import '../../core/widgets/buttons/gradient_button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+Future<String> _compressImagesInBackground(Map<String, Object> args) async {
+  final imagePaths = args['imagePaths'] as List<String>;
+  final zipPath = args['zipPath'] as String;
+  final encoder = ZipFileEncoder();
+
+  encoder.create(zipPath);
+  try {
+    for (final imagePath in imagePaths) {
+      encoder.addFile(File(imagePath));
+    }
+  } finally {
+    encoder.close();
+  }
+
+  return zipPath;
+}
 
 class ReconstructionUploadPage extends StatefulWidget {
   final List<XFile>? images;
@@ -42,6 +60,11 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
   double _progress = 0.0;
   Timer? _statusTimer;
 
+  void _safeSetState(VoidCallback fn) {
+    if (!mounted) return;
+    setState(fn);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -64,26 +87,32 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
   }
 
   Future<String?> _compressImages() async {
-    setState(() {
+    _safeSetState(() {
       _currentStatus = 'compressing';
       _progress = 0.0;
     });
 
     try {
-      final encoder = ZipFileEncoder();
       final directory = await getTemporaryDirectory();
       final zipPath = p.join(
         directory.path,
         'upload_${DateTime.now().millisecondsSinceEpoch}.zip',
       );
+      final imagePaths = _selectedImages.map((image) => image.path).toList();
 
-      encoder.create(zipPath);
-      for (var image in _selectedImages) {
-        encoder.addFile(File(image.path));
+      final resultPath = await compute(_compressImagesInBackground, {
+        'imagePaths': imagePaths,
+        'zipPath': zipPath,
+      });
+
+      final zipSize = await File(resultPath).length();
+      debugPrint('[API] result compressImages zip=$resultPath size=$zipSize');
+      if (zipSize <= 22) {
+        debugPrint('[API] result compressImages failed reason=empty_zip');
+        return null;
       }
-      encoder.close();
 
-      return zipPath;
+      return resultPath;
     } catch (e) {
       debugPrint('压缩失败: $e');
       return null;
@@ -125,7 +154,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
     final zipPath = await _compressImages();
     if (zipPath == null) {
       taskState.updateTaskStatus(localTaskId, TaskStatus.failed);
-      setState(() => _currentStatus = 'failed');
+      _safeSetState(() => _currentStatus = 'failed');
       debugPrint(
         '[API] result button=start_reconstruction failed reason=compress',
       );
@@ -133,7 +162,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
     }
 
     // 2. 分片上传
-    setState(() {
+    _safeSetState(() {
       _currentStatus = 'uploading';
       _progress = 0.0;
     });
@@ -142,11 +171,12 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
     try {
       final mergeRes = await _uploadService.uploadFile(
         zipPath,
-        onProgress: (p) => setState(() => _progress = p),
+        onProgress: (p) => _safeSetState(() => _progress = p),
       );
+      if (!mounted) return;
 
       // 3. 启动重建任务
-      setState(() {
+      _safeSetState(() {
         _currentStatus = 'processing';
         _progress = 0.1;
       });
@@ -167,7 +197,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
 
       if (serverTaskId == null) {
         taskState.updateTaskStatus(localTaskId, TaskStatus.failed);
-        setState(() => _currentStatus = 'failed');
+        _safeSetState(() => _currentStatus = 'failed');
         debugPrint(
           '[API] result button=start_reconstruction failed reason=no_task_id',
         );
@@ -183,7 +213,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
         ),
       );
 
-      setState(() {
+      _safeSetState(() {
         _taskId = serverTaskId;
       });
 
@@ -200,7 +230,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
       debugPrint('处理流程失败: $e');
       debugPrint('[API] result button=start_reconstruction failed error=$e');
       taskState.updateTaskStatus(localTaskId, TaskStatus.failed);
-      setState(() => _currentStatus = 'failed');
+      _safeSetState(() => _currentStatus = 'failed');
     }
   }
 
@@ -214,7 +244,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
       final status = statusData['status'];
       debugPrint('任务状态: $status');
 
-      setState(() {
+      _safeSetState(() {
         if (status == 'completed') {
           timer.cancel();
           _currentStatus = 'completed';
@@ -237,6 +267,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
   Future<void> _downloadAndPreview(String taskId) async {
     // 这里可以添加下载并跳转预览逻辑
     debugPrint('任务完成，ID: $taskId');
+    if (!mounted) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('重建完成！模型已准备就绪。')));

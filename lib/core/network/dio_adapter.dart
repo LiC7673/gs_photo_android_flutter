@@ -45,12 +45,20 @@ class DioAdapter {
     );
   }
 
+  String _normalizePath(String path) {
+    return path.startsWith('/') ? path.substring(1) : path;
+  }
+
   Future<Response<T>> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
-    return dio.get<T>(path, queryParameters: queryParameters, options: options);
+    return dio.get<T>(
+      _normalizePath(path),
+      queryParameters: queryParameters,
+      options: options,
+    );
   }
 
   Future<Response<T>> post<T>(
@@ -60,7 +68,7 @@ class DioAdapter {
     Options? options,
   }) async {
     return dio.post<T>(
-      path,
+      _normalizePath(path),
       data: data,
       queryParameters: queryParameters,
       options: options,
@@ -74,7 +82,7 @@ class DioAdapter {
     Options? options,
   }) async {
     return dio.put<T>(
-      path,
+      _normalizePath(path),
       data: data,
       queryParameters: queryParameters,
       options: options,
@@ -88,7 +96,7 @@ class DioAdapter {
     Options? options,
   }) async {
     return dio.delete<T>(
-      path,
+      _normalizePath(path),
       data: data,
       queryParameters: queryParameters,
       options: options,

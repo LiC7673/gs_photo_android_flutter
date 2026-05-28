@@ -33,8 +33,13 @@ class UploadService {
 
   /// 计算文件 SHA256 哈希
   Future<String> _calculateFileHash(File file) async {
-    final bytes = await file.readAsBytes();
-    return sha256.convert(bytes).toString();
+    final digest = await sha256.bind(file.openRead()).first;
+    return digest.toString();
+  }
+
+  Future<String> _calculateMd5Hash(File file) async {
+    final digest = await md5.bind(file.openRead()).first;
+    return digest.toString();
   }
 
   /// 初始化上传
@@ -173,30 +178,33 @@ class UploadService {
     List<MergeRequestPart> parts = [];
 
     // 2. 分片上传
-    final bytes = await file.readAsBytes();
-    for (int i = 0; i < totalChunks; i++) {
-      int start = i * chunkSize;
-      int end = (i + 1) * chunkSize;
-      if (end > fileSize) end = fileSize;
+    final reader = await file.open();
+    try {
+      for (int i = 0; i < totalChunks; i++) {
+        final remaining = fileSize - (i * chunkSize);
+        final readSize = remaining < chunkSize ? remaining : chunkSize;
 
-      final chunkData = bytes.sublist(start, end);
+        final chunkData = await reader.read(readSize);
 
-      // 可以先检查进度，实现断点续传（此处简化为直接上传）
-      final chunkRes = await uploadChunk(
-        uploadId: uploadId,
-        chunkIndex: i,
-        chunkData: chunkData,
-      );
+        // 可以先检查进度，实现断点续传（此处简化为直接上传）
+        final chunkRes = await uploadChunk(
+          uploadId: uploadId,
+          chunkIndex: i,
+          chunkData: chunkData,
+        );
 
-      parts.add(MergeRequestPart(chunkIndex: i, etag: chunkRes.etag));
+        parts.add(MergeRequestPart(chunkIndex: i, etag: chunkRes.etag));
 
-      if (onProgress != null) {
-        onProgress((i + 1) / totalChunks);
+        if (onProgress != null) {
+          onProgress((i + 1) / totalChunks);
+        }
       }
+    } finally {
+      await reader.close();
     }
 
     // 3. 合并
-    final fileHash = md5.convert(bytes).toString(); // 后端合并请求需要的是 MD5
+    final fileHash = await _calculateMd5Hash(file); // 后端合并请求需要的是 MD5
     final result = await mergeChunks(
       uploadId: uploadId,
       expectedSize: fileSize,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../state/user_state.dart';
 import 'route_config.dart';
 import '../../main.dart';
 import '../../features/main_page/main_page.dart';
@@ -31,6 +32,21 @@ class RouteAdapter {
     return GoRouter(
       initialLocation: loginPath,
       debugLogDiagnostics: true,
+      refreshListenable: UserState.instance,
+      redirect: (context, state) {
+        final isLoggedIn = UserState.instance.isLoggedIn;
+        final isLoggingIn = state.uri.path == loginPath;
+
+        if (!isLoggedIn && !isLoggingIn) {
+          return loginPath;
+        }
+
+        if (isLoggedIn && isLoggingIn) {
+          return homeTabPath;
+        }
+
+        return null;
+      },
       routes: [
         // 顶级路由 (如登录)
         ..._convertToGoRoutes(appRouteTree),

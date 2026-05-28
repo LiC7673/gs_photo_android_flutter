@@ -26,7 +26,7 @@ class UploadInitResponse {
   final String uploadId;
   final int chunkSize;
   final int totalChunks;
-  final DateTime expiresAt;
+  final DateTime? expiresAt;
 
   UploadInitResponse({
     required this.uploadId,
@@ -40,14 +40,16 @@ class UploadInitResponse {
         uploadId: json['upload_id'],
         chunkSize: json['chunk_size'],
         totalChunks: json['total_chunks'],
-        expiresAt: DateTime.parse(json['expires_at']),
+        expiresAt: json['expires_at'] == null
+            ? null
+            : DateTime.parse(json['expires_at']),
       );
   Map<String, dynamic> toJson() => {
     'upload_id': uploadId,
     'chunk_size': chunkSize,
     'total_chunks': totalChunks,
     // 注意：DateTime 类型必须转成字符串（推荐 ISO8601 格式），否则 jsonEncode 依然会报错
-    'expires_at': expiresAt.toIso8601String(),
+    if (expiresAt != null) 'expires_at': expiresAt!.toIso8601String(),
   };
 }
 

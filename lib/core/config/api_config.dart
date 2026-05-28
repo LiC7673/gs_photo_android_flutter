@@ -12,6 +12,11 @@ class ApiPaths {
   static const String renderTaskE = '/album/render/task_e';
 
   static const String publicHead = '/api/v1/';
+  // 认证接口
+  static const String authLoginPath = 'auth/login';
+  static const String authRegisterPath = 'auth/register';
+  static const String authMePath = 'auth/me';
+  static const String userProfilePath = 'users/me';
   //上传接口
   static const String uploadInitPath = 'upload/init';
   static const String uploadChunkPath = 'upload/{upload_id}/chunk';
@@ -20,5 +25,5 @@ class ApiPaths {
   static const String uploadCancelPath = 'upload/{file_id}/cancel';
   // 超时时间配置 (单位：毫秒)
   static const int connectTimeout = 10000;
-  static const int receiveTimeout = 30000;
+  static const int receiveTimeout = 300000;
 }
