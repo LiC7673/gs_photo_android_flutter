@@ -29,8 +29,8 @@ class SciFiBackground extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFF00C6FF).withOpacity(0.12),
-                  const Color(0xFF00C6FF).withOpacity(0),
+                  const Color(0xFF00C6FF).withValues(alpha: 0.12),
+                  const Color(0xFF00C6FF).withValues(alpha: 0),
                 ],
               ),
             ),
@@ -48,8 +48,8 @@ class SciFiBackground extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFFB100FF).withOpacity(0.08),
-                  const Color(0xFFB100FF).withOpacity(0),
+                  const Color(0xFFB100FF).withValues(alpha: 0.08),
+                  const Color(0xFFB100FF).withValues(alpha: 0),
                 ],
               ),
             ),

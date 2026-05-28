@@ -38,7 +38,7 @@ class TaskItem extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           width: 0.8,
         ),
       ),
@@ -49,12 +49,12 @@ class TaskItem extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.all(screenWidth * 0.03),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFFFF).withOpacity(0.05),
+              color: const Color(0xFFFFFFFF).withValues(alpha: 0.05),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(0.1),
+                  Colors.white.withValues(alpha: 0.1),
                   Colors.transparent,
                 ],
               ),
@@ -68,7 +68,7 @@ class TaskItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: const Color(0xFF00C6FF).withOpacity(0.3),
+                      color: const Color(0xFF00C6FF).withValues(alpha: 0.3),
                       width: 1.5,
                     ),
                     image: imageProvider != null ? DecorationImage(
@@ -78,7 +78,7 @@ class TaskItem extends StatelessWidget {
                     color: imageProvider == null ? Colors.white.withOpacity(0.1) : null,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF00C6FF).withOpacity(0.1),
+                        color: const Color(0xFF00C6FF).withValues(alpha: 0.1),
                         blurRadius: 8,
                         spreadRadius: 1,
                       ),
@@ -106,8 +106,8 @@ class TaskItem extends StatelessWidget {
                       Text(
                         creationTime,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
-                          fontSize: screenWidth * 0.032,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 13,
                         ),
                       ),
                       SizedBox(height: screenWidth * 0.025),
@@ -175,7 +175,7 @@ class TaskItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: (gradient as LinearGradient).colors.first.withOpacity(0.3),
+              color: (gradient as LinearGradient).colors.first.withValues(alpha: 0.3),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),

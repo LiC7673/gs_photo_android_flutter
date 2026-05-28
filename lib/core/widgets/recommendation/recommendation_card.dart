@@ -24,7 +24,7 @@ class RecommendationCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           width: 0.8,
         ),
       ),
@@ -33,7 +33,7 @@ class RecommendationCard extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            color: const Color(0xFFFFFFFF).withOpacity(0.05),
+            color: const Color(0xFFFFFFFF).withValues(alpha: 0.05),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -80,8 +80,8 @@ class RecommendationCard extends StatelessWidget {
                             child: Text(
                               userId,
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.6),
-                                fontSize: screenWidth * 0.03,
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 12,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

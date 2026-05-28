@@ -40,18 +40,18 @@ class GlassButton extends StatelessWidget {
               height: buttonHeight,
               decoration: BoxDecoration(
                 // 2. 半透明背景色 (带有轻微的白色光泽)
-                color: Colors.white.withOpacity(opacity),
+                color: Colors.white.withValues(alpha: opacity),
                 borderRadius: BorderRadius.circular(borderRadius),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.white.withOpacity(0.2),
-                    Colors.white.withOpacity(0.05),
+                    Colors.white.withValues(alpha: 0.2),
+                    Colors.white.withValues(alpha: 0.05),
                   ],
                 ),
               ),
