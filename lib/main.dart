@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'core/widgets/bar/custom_nav_bar.dart';
 import 'core/widgets/background/sci_fi_background.dart';
 import 'core/router/route_adapter.dart';
-import 'core/router/route_config.dart';
 import 'core/network/auth_service.dart';
 import 'core/state/task_state.dart';
 import 'core/state/user_state.dart';
@@ -94,32 +93,13 @@ class MainNavigationWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentPath = GoRouterState.of(context).uri.path;
-    final tabRootPaths = {
-      homeTabPath,
-      taskTabPath,
-      recommendationTabPath,
-      profileTabPath,
-    };
-    final isAtTabRoot = tabRootPaths.contains(currentPath);
-
-    return PopScope(
-      canPop: !isAtTabRoot,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-
-        if (navigationShell.currentIndex != 0) {
-          navigationShell.goBranch(0);
-        }
-      },
-      child: SciFiBackground(
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: SafeArea(bottom: false, child: navigationShell),
-          bottomNavigationBar: CustomNavBar(
-            currentIndex: navigationShell.currentIndex,
-            onTap: _onTap,
-          ),
+    return SciFiBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(bottom: false, child: navigationShell),
+        bottomNavigationBar: CustomNavBar(
+          currentIndex: navigationShell.currentIndex,
+          onTap: _onTap,
         ),
       ),
     );

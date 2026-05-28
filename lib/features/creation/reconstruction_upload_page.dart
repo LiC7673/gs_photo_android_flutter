@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../core/network/reconstruction_models.dart';
 import '../../core/network/reconstruction_service.dart';
 import '../../core/network/upload_service.dart';
+import '../../core/router/route_config.dart';
 import '../../core/state/task_state.dart';
 import '../../core/widgets/background/sci_fi_background.dart';
 import '../../core/widgets/buttons/gradient_button.dart';
@@ -82,7 +83,10 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
     final localTaskId = 'local_${DateTime.now().millisecondsSinceEpoch}';
     final taskName = _taskName;
     final params = _buildReconstructionParams();
-    final algorithm = _normalizeAlgorithm(params['algorithm']?.toString());
+    final algorithm = await _resolveAvailableAlgorithm(
+      _normalizeAlgorithm(params['algorithm']?.toString()),
+    );
+    params['algorithm'] = algorithm;
     final initialTask = ProcessingTask(
       taskId: localTaskId,
       title: taskName,
@@ -167,9 +171,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
             },
             files: [
               ...uploadedFiles,
-              ..._selectedImages
-                  .skip(index + 1)
-                  .map(_storageFileFromImage),
+              ..._selectedImages.skip(index + 1).map(_storageFileFromImage),
             ],
             status: TaskStatus.uploadingFiles,
             updatedAt: DateTime.now(),
@@ -250,10 +252,10 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
       if (taskStatus == TaskStatus.completed) {
         timer.cancel();
         _safeSetState(() {
-          _currentStatus = 'completed';
-          _progress = 1.0;
+          _currentStatus = 'downloading';
+          _progress = 0.98;
         });
-        _downloadAndPreview(taskId);
+        _downloadAndPreview(taskId, statusData);
         return;
       }
 
@@ -274,12 +276,77 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
     });
   }
 
-  Future<void> _downloadAndPreview(String taskId) async {
+  Future<void> _downloadAndPreview(
+    String taskId,
+    ReconstructionStatusResponse statusData,
+  ) async {
     debugPrint('[API] result reconstruction_completed taskId=$taskId');
+    final resultFileId = statusData.resultFileId;
+    if (resultFileId == null || resultFileId.isEmpty) {
+      debugPrint(
+        '[API] result downloadResultFile failed reason=no_result_file_id '
+        'taskId=$taskId',
+      );
+      if (!mounted) return;
+      context.read<TaskState>().updateTaskStatus(taskId, TaskStatus.failed);
+      _safeSetState(() => _currentStatus = 'failed');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('重建完成，但没有返回结果文件 ID')));
+      return;
+    }
+
+    final file = await _reconstructionService.downloadResultFile(
+      resultFileId: resultFileId,
+      taskId: taskId,
+      onProgress: (downloadProgress) {
+        _safeSetState(() {
+          _progress = (0.95 + downloadProgress * 0.05).clamp(0.95, 1.0);
+        });
+      },
+    );
+
     if (!mounted) return;
+
+    if (file == null) {
+      context.read<TaskState>().updateTaskStatus(taskId, TaskStatus.failed);
+      _safeSetState(() => _currentStatus = 'failed');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('重建完成，但结果下载失败')));
+      return;
+    }
+
+    final fileSize = await file.length();
+    if (!mounted) return;
+
+    final resultPly = StorageFile(
+      fileId: resultFileId,
+      localPath: file.path,
+      status: FileSyncStatus.synced,
+      md5: '',
+      size: fileSize,
+    );
+    final taskState = context.read<TaskState>();
+    final task = taskState.getTask(taskId);
+    if (task != null) {
+      taskState.upsertTask(
+        task.copyWith(
+          status: TaskStatus.completed,
+          resultPly: resultPly,
+          updatedAt: DateTime.now(),
+        ),
+      );
+    }
+
+    _safeSetState(() {
+      _currentStatus = 'completed';
+      _progress = 1.0;
+    });
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('重建完成，模型已准备就绪')));
+    ).showSnackBar(const SnackBar(content: Text('重建完成，正在打开渲染器')));
+    context.push('$homeTabPath/$localViewerPath', extra: file.path);
   }
 
   void _safeSetState(VoidCallback fn) {
@@ -323,6 +390,40 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
       default:
         return 'anysplat';
     }
+  }
+
+  Future<String> _resolveAvailableAlgorithm(String requestedAlgorithm) async {
+    final algorithms = await _reconstructionService.listAlgorithms();
+    final availableAlgorithms =
+        algorithms?.algorithms
+            .where(
+              (algorithm) => algorithm.available && algorithm.name.isNotEmpty,
+            )
+            .map((algorithm) => algorithm.name)
+            .toSet() ??
+        const <String>{};
+
+    if (availableAlgorithms.isEmpty ||
+        availableAlgorithms.contains(requestedAlgorithm)) {
+      return requestedAlgorithm;
+    }
+
+    final defaultAlgorithm = algorithms?.defaultAlgorithm;
+    if (defaultAlgorithm != null &&
+        availableAlgorithms.contains(defaultAlgorithm)) {
+      debugPrint(
+        '[API] result algorithm_fallback requested=$requestedAlgorithm '
+        'fallback=$defaultAlgorithm',
+      );
+      return defaultAlgorithm;
+    }
+
+    final fallback = availableAlgorithms.first;
+    debugPrint(
+      '[API] result algorithm_fallback requested=$requestedAlgorithm '
+      'fallback=$fallback',
+    );
+    return fallback;
   }
 
   StorageFile _storageFileFromImage(XFile image) {
@@ -442,6 +543,10 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
       case 'processing':
         message = '算法正在重建 3D 点云...';
         icon = Icons.memory;
+        break;
+      case 'downloading':
+        message = '正在下载重建结果...';
+        icon = Icons.download;
         break;
       case 'completed':
         message = '重建成功';

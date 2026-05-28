@@ -30,7 +30,6 @@ class CustomNavBar extends StatelessWidget {
           ),
           child: SafeArea(
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildNavItem(0, '首页', Icons.home_rounded),
                 _buildNavItem(1, "任务", Icons.task),
@@ -54,64 +53,67 @@ class CustomNavBar extends StatelessWidget {
     final Color activeColor = const Color(0xFF00C6FF); // 亮青色
     final Color inactiveColor = const Color(0xFF5E6A81); // 灰色调
 
-    return GestureDetector(
-      onTap: () => onTap(index),
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 8),
-          Stack(
-            clipBehavior: Clip.none,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onTap(index),
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox.expand(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                defaultIcon,
-                size: 28,
-                color: isSelected ? activeColor : inactiveColor,
-                shadows: isSelected
-                    ? [
-                  Shadow(
-                    color: activeColor.withValues(alpha: 0.8),
-                    blurRadius: 16,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    defaultIcon,
+                    size: 28,
+                    color: isSelected ? activeColor : inactiveColor,
+                    shadows: isSelected
+                        ? [
+                            Shadow(
+                              color: activeColor.withValues(alpha: 0.8),
+                              blurRadius: 16,
+                            ),
+                          ]
+                        : null,
                   ),
-                      ]
-                    : null,
-              ),
-              if (hasBadge)
-                Positioned(
-                  right: -4,
-                  top: -4,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF03081C),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.red.withValues(alpha: 0.5),
-                          blurRadius: 4,
+                  if (hasBadge)
+                    Positioned(
+                      right: -4,
+                      top: -4,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF03081C),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withValues(alpha: 0.5),
+                              blurRadius: 4,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? activeColor : inactiveColor,
                 ),
+              ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? activeColor : inactiveColor,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

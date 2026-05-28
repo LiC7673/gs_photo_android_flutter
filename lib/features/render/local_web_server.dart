@@ -7,7 +7,10 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_static/shelf_static.dart';
 
 class LocalWebServer {
+  final File? modelFile;
   HttpServer? _server;
+
+  LocalWebServer({this.modelFile});
 
   Future<Uri> start() async {
     if (_server != null) {
@@ -78,6 +81,18 @@ class LocalWebServer {
       throw StateError(
         '没有复制到 index.html。请确认 assets/spark_web/index.html 存在，并已在 pubspec.yaml 注册。',
       );
+    }
+
+    if (modelFile != null) {
+      if (!await modelFile!.exists()) {
+        throw StateError('模型文件不存在: ${modelFile!.path}');
+      }
+      final modelsDir = Directory(p.join(webDir.path, 'models'));
+      await modelsDir.create(recursive: true);
+      final outputFile = File(
+        p.join(modelsDir.path, p.basename(modelFile!.path)),
+      );
+      await modelFile!.copy(outputFile.path);
     }
 
     return webDir;

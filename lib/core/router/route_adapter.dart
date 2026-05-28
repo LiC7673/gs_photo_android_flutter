@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../state/user_state.dart';
 import 'route_config.dart';
 import '../../main.dart';
+import '../../features/camera/camera_guide_screen.dart';
+import '../../features/creation/creation_page.dart';
 import '../../features/main_page/main_page.dart';
+import '../../features/render/local_viewer_page.dart';
+import '../../features/render/preview_webview_screen.dart';
 import '../../features/task_page/task_page.dart';
+import '../../features/task_page/task_detail_page.dart';
 import '../../features/recommendation_page/recommendation_page.dart';
 import '../../features/profile/profile_page.dart';
 
@@ -51,6 +57,45 @@ class RouteAdapter {
         // 顶级路由 (如登录)
         ..._convertToGoRoutes(appRouteTree),
 
+        // 二级页面：放在 Shell 外，像独立 Activity，不显示底部导航
+        GoRoute(
+          path: '$homeTabPath/$cameraGuidePath',
+          builder: (context, state) =>
+              _withRouteBackground(const CameraGuideScreen()),
+        ),
+        GoRoute(
+          path: '$homeTabPath/$creationConfigPath',
+          builder: (context, state) =>
+              _withRouteBackground(const CreationPage()),
+        ),
+        GoRoute(
+          path: '$homeTabPath/$previewPath',
+          builder: (context, state) {
+            final modelUrl = state.uri.queryParameters['modelUrl'];
+            return _withRouteBackground(
+              PreviewWebViewScreen(modelUrl: modelUrl),
+            );
+          },
+        ),
+        GoRoute(
+          path: '$homeTabPath/$localViewerPath',
+          builder: (context, state) {
+            final extra = state.extra;
+            return _withRouteBackground(
+              SparkLocalViewerPage(modelPath: extra is String ? extra : null),
+            );
+          },
+        ),
+        GoRoute(
+          path: '$taskTabPath/$taskDetailPath/:taskId',
+          builder: (context, state) => _withRouteBackground(
+            TaskDetailPage(
+              taskId: state.pathParameters['taskId'] ?? '',
+              initialImages: (state.extra as Map?)?['images'] as List<XFile>?,
+            ),
+          ),
+        ),
+
         // 主导航 Shell 路由
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {
@@ -64,7 +109,6 @@ class RouteAdapter {
                   path: homeTabPath,
                   builder: (context, state) =>
                       _withRouteBackground(const MainScreen()),
-                  routes: _convertToGoRoutes(featureRoutes), // 挂载功能路由在首页分支下
                 ),
               ],
             ),

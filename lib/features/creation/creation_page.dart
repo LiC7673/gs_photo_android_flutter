@@ -1,7 +1,13 @@
 import 'dart:ui';
 import 'dart:io';
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import '../../core/network/reconstruction_models.dart';
+import '../../core/network/reconstruction_service.dart';
+import '../../core/state/task_state.dart';
 import '../../core/widgets/background/sci_fi_background.dart';
 import '../../core/widgets/buttons/gradient_button.dart';
 import 'package:go_router/go_router.dart';
@@ -25,11 +31,15 @@ class _CreationPageState extends State<CreationPage> {
 
   // 3. 重建参数
   double _resolutionScale = 0.5; // 0.1 - 1.0
-  String _selectedAlgorithm = 'AnySplat';
-  final List<String> _algorithms = [
-    'AnySplat',
-    'Segment Then Splat',
-    'VGGT Omega',
+  String _selectedAlgorithm = 'anysplat';
+  final ReconstructionService _reconstructionService = ReconstructionService();
+  bool _loadingAlgorithms = true;
+  List<ReconstructionAlgorithm> _algorithms = [
+    ReconstructionAlgorithm(
+      name: 'anysplat',
+      displayName: 'AnySplat',
+      available: true,
+    ),
   ];
 
   // 4. 图片素材
@@ -37,9 +47,45 @@ class _CreationPageState extends State<CreationPage> {
   final List<XFile> _selectedImages = [];
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(_loadAlgorithms());
+  }
+
+  @override
   void dispose() {
     _taskNameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAlgorithms() async {
+    final response = await _reconstructionService.listAlgorithms().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => null,
+    );
+    if (!mounted) return;
+
+    final availableAlgorithms = response?.algorithms
+        .where((algorithm) => algorithm.available && algorithm.name.isNotEmpty)
+        .toList();
+    if (availableAlgorithms == null || availableAlgorithms.isEmpty) {
+      setState(() => _loadingAlgorithms = false);
+      return;
+    }
+
+    final defaultAlgorithm = response?.defaultAlgorithm;
+    final selected =
+        availableAlgorithms.any(
+          (algorithm) => algorithm.name == defaultAlgorithm,
+        )
+        ? defaultAlgorithm!
+        : availableAlgorithms.first.name;
+
+    setState(() {
+      _algorithms = availableAlgorithms;
+      _selectedAlgorithm = selected;
+      _loadingAlgorithms = false;
+    });
   }
 
   Future<void> _pickFromGallery() async {
@@ -208,20 +254,7 @@ class _CreationPageState extends State<CreationPage> {
 
                 GradientButton(
                   label: canStart ? '开始 3DGS 重建' : '请至少选择 6 张图片',
-                  onPressed: canStart
-                      ? () {
-                          context.push(
-                            '$homeTabPath/$creationConfigPath/$uploadProgressPath',
-                            extra: {
-                              'images': _selectedImages,
-                              'taskName': _taskNameController.text,
-                              'type': _reconstructionType,
-                              'resolution': _resolutionScale,
-                              'algorithm': _selectedAlgorithm,
-                            },
-                          );
-                        }
-                      : null,
+                  onPressed: canStart ? () => _createTask(context) : null,
                   height: 56,
                 ),
                 const SizedBox(height: 32),
@@ -230,6 +263,47 @@ class _CreationPageState extends State<CreationPage> {
           ),
         ),
       ),
+    );
+  }
+
+  void _createTask(BuildContext context) {
+    final taskId = 'local_${DateTime.now().millisecondsSinceEpoch}';
+    final taskName = _taskNameController.text.trim().isEmpty
+        ? '未命名任务'
+        : _taskNameController.text.trim();
+    final params = {
+      'task_name': taskName,
+      'type': _reconstructionType,
+      'resolution': _resolutionScale,
+      'algorithm': _selectedAlgorithm,
+      'image_count': _selectedImages.length,
+    };
+    final files = _selectedImages.map((image) {
+      final file = File(image.path);
+      return StorageFile(
+        fileId: image.name.isNotEmpty ? image.name : image.path,
+        localPath: image.path,
+        status: FileSyncStatus.localOnly,
+        md5: '',
+        size: file.existsSync() ? file.lengthSync() : 0,
+      );
+    }).toList();
+
+    context.read<TaskState>().upsertTask(
+      ProcessingTask(
+        taskId: taskId,
+        title: taskName,
+        params: params,
+        files: files,
+        status: TaskStatus.draft,
+        stage: '等待开始',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+    context.push(
+      '$taskTabPath/$taskDetailPath/${Uri.encodeComponent(taskId)}',
+      extra: {'images': List<XFile>.from(_selectedImages)},
     );
   }
 
@@ -328,7 +402,13 @@ class _CreationPageState extends State<CreationPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 16)),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ),
+        const SizedBox(width: 16),
         action,
       ],
     );
@@ -357,29 +437,43 @@ class _CreationPageState extends State<CreationPage> {
   }
 
   Widget _buildAlgorithmSelector(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButton<String>(
-        value: _selectedAlgorithm,
-        dropdownColor: const Color(0xFF1C0305),
-        underline: const SizedBox(),
-        icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white70),
-        items: _algorithms.map((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(
-              value,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
-          );
-        }).toList(),
-        onChanged: (newValue) {
-          if (newValue != null) setState(() => _selectedAlgorithm = newValue);
-        },
+    return SizedBox(
+      width: 160,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: _loadingAlgorithms
+            ? const SizedBox(height: 48, child: Center(child: _JumpingDots()))
+            : DropdownButton<String>(
+                value: _selectedAlgorithm,
+                isExpanded: true,
+                dropdownColor: const Color(0xFF1C0305),
+                underline: const SizedBox(),
+                icon: const Icon(
+                  Icons.keyboard_arrow_down,
+                  color: Colors.white70,
+                ),
+                items: _algorithms.map((algorithm) {
+                  return DropdownMenuItem<String>(
+                    value: algorithm.name,
+                    child: Text(
+                      algorithm.displayName.isNotEmpty
+                          ? algorithm.displayName
+                          : algorithm.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  if (newValue != null) {
+                    setState(() => _selectedAlgorithm = newValue);
+                  }
+                },
+              ),
       ),
     );
   }
@@ -447,6 +541,61 @@ class _CreationPageState extends State<CreationPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _JumpingDots extends StatefulWidget {
+  const _JumpingDots();
+
+  @override
+  State<_JumpingDots> createState() => _JumpingDotsState();
+}
+
+class _JumpingDotsState extends State<_JumpingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (index) {
+            final phase = (_controller.value + index * 0.18) * math.pi * 2;
+            final offset = -4 * math.sin(phase);
+            return Transform.translate(
+              offset: Offset(0, offset),
+              child: Container(
+                width: 6,
+                height: 6,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF00C6FF),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }

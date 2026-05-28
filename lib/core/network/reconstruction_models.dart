@@ -10,12 +10,11 @@ class ReconstructionCreateTaskRequest {
   });
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'task_name': title,
-        'params': params,
-        if (algorithm != null && algorithm!.isNotEmpty)
-          'algorithm': algorithm,
-      };
+    'title': title,
+    'task_name': title,
+    'params': params,
+    if (algorithm != null && algorithm!.isNotEmpty) 'algorithm': algorithm,
+  };
 }
 
 class ReconstructionTaskResponse {
@@ -69,14 +68,10 @@ class ReconstructionStartUploadedRequest {
       .toList(growable: false);
 
   Map<String, dynamic> toJson() => {
-        'file_ids': normalizedImageFileIds,
-        'params': {
-          ...params,
-          'file_ids': normalizedImageFileIds,
-        },
-        if (algorithm != null && algorithm!.isNotEmpty)
-          'algorithm': algorithm,
-      };
+    'file_ids': normalizedImageFileIds,
+    'params': {...params, 'file_ids': normalizedImageFileIds},
+    if (algorithm != null && algorithm!.isNotEmpty) 'algorithm': algorithm,
+  };
 }
 
 class ReconstructionStartResponse {
@@ -120,7 +115,7 @@ class ReconstructionStatusResponse {
   final int? imageCount;
   final String? errorCode;
   final String? error;
-  final int? resultFileId;
+  final String? resultFileId;
 
   ReconstructionStatusResponse({
     required this.taskId,
@@ -144,7 +139,7 @@ class ReconstructionStatusResponse {
       imageCount: (json['image_count'] as num?)?.toInt(),
       errorCode: json['error_code'] as String?,
       error: json['error'] as String?,
-      resultFileId: (json['result_file_id'] as num?)?.toInt(),
+      resultFileId: json['result_file_id']?.toString(),
     );
   }
 }
@@ -214,9 +209,11 @@ class ReconstructionAlgorithmsResponse {
     return ReconstructionAlgorithmsResponse(
       algorithms: (json['algorithms'] as List? ?? const [])
           .whereType<Map>()
-          .map((item) => ReconstructionAlgorithm.fromJson(
-                Map<String, dynamic>.from(item),
-              ))
+          .map(
+            (item) => ReconstructionAlgorithm.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
           .toList(),
       defaultAlgorithm: json['default_algorithm'] as String? ?? '',
     );

@@ -1,26 +1,39 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'local_web_server.dart';
 
 class SparkLocalViewerPage extends StatefulWidget {
-  const SparkLocalViewerPage({super.key});
+  final String? modelPath;
+
+  const SparkLocalViewerPage({super.key, this.modelPath});
 
   @override
   State<SparkLocalViewerPage> createState() => _SparkLocalViewerPageState();
 }
 
 class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
-  final LocalWebServer _server = LocalWebServer();
+  late final LocalWebServer _server;
 
   WebViewController? _controller;
   bool _loading = true;
   String? _error;
   bool _autoRotate = false;
 
+  String? get _modelUrl {
+    final modelPath = widget.modelPath;
+    if (modelPath == null || modelPath.isEmpty) return null;
+    return '/models/${Uri.encodeComponent(modelPath.split(Platform.pathSeparator).last)}';
+  }
+
   @override
   void initState() {
     super.initState();
+    _server = LocalWebServer(
+      modelFile: widget.modelPath == null ? null : File(widget.modelPath!),
+    );
     _initViewer();
   }
 
@@ -28,7 +41,8 @@ class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
     try {
       final localUrl = await _server.start();
 
-      final controller = WebViewController()
+      final controller = WebViewController();
+      controller
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(Colors.black)
         ..addJavaScriptChannel(
@@ -53,6 +67,25 @@ class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
                   _loading = false;
                 });
               }
+              final modelUrl = _modelUrl;
+              if (modelUrl != null) {
+                controller.runJavaScript('''
+                  (() => {
+                    const modelUrl = "$modelUrl";
+                    let tries = 0;
+                    const load = () => {
+                      if (window.loadSplat) {
+                        window.loadSplat(modelUrl);
+                        return;
+                      }
+                      if (tries++ < 20) {
+                        window.setTimeout(load, 100);
+                      }
+                    };
+                    load();
+                  })();
+                  ''');
+              }
             },
             onWebResourceError: (WebResourceError error) {
               if (mounted) {
@@ -63,8 +96,8 @@ class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
               }
             },
           ),
-        )
-        ..loadRequest(localUrl);
+        );
+      await controller.loadRequest(localUrl);
 
       if (!mounted) return;
 

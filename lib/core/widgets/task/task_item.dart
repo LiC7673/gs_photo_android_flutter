@@ -6,6 +6,8 @@ class TaskItem extends StatelessWidget {
   final String title;
   final String creationTime;
   final String status;
+  final IconData statusIcon;
+  final Color statusColor;
   final String? thumbnailUrl;
   final String? localThumbnailPath;
   final VoidCallback onView;
@@ -16,6 +18,8 @@ class TaskItem extends StatelessWidget {
     required this.title,
     required this.creationTime,
     required this.status,
+    this.statusIcon = Icons.info_outline,
+    this.statusColor = const Color(0xFF00FFC2),
     this.thumbnailUrl,
     this.localThumbnailPath,
     required this.onView,
@@ -121,16 +125,22 @@ class TaskItem extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        status,
-                        style: TextStyle(
-                          color: const Color(0xFF00FFC2), // 霓虹绿
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          shadows: const [
-                            Shadow(color: Color(0xFF00FFC2), blurRadius: 12),
-                          ],
-                        ),
+                      Row(
+                        children: [
+                          Icon(statusIcon, color: statusColor, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            status,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              shadows: [
+                                Shadow(color: statusColor, blurRadius: 12),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

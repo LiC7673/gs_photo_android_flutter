@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../features/login/login_screen.dart';
 import '../../features/camera/camera_guide_screen.dart';
 import '../../features/creation/creation_page.dart';
-import '../../features/creation/reconstruction_upload_page.dart';
 import '../../features/render/preview_webview_screen.dart';
 import '../../features/render/local_viewer_page.dart';
 
@@ -40,6 +38,7 @@ const String uploadProgressPath = 'upload_progress';
 const String previewPath = 'preview';
 
 const String localViewerPath = 'local_viewer';
+const String taskDetailPath = 'detail';
 
 /// 3. 核心路由配置树 (非 Shell 部分)
 final List<AppRouteNode> appRouteTree = [
@@ -61,20 +60,6 @@ final List<AppRouteNode> featureRoutes = [
   AppRouteNode(
     path: creationConfigPath,
     builder: (context, state) => const CreationPage(),
-    children: [
-      // 重建上传进度页
-      AppRouteNode(
-        path: uploadProgressPath,
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return ReconstructionUploadPage(
-            images: extra?['images'] as List<XFile>?,
-            taskName: extra?['taskName'] as String?,
-            params: extra,
-          );
-        },
-      ),
-    ],
   ),
   // 模型预览 (支持传参)
   AppRouteNode(
@@ -87,6 +72,9 @@ final List<AppRouteNode> featureRoutes = [
   // 本地查看器
   AppRouteNode(
     path: localViewerPath,
-    builder: (context, state) => const SparkLocalViewerPage(),
+    builder: (context, state) {
+      final extra = state.extra;
+      return SparkLocalViewerPage(modelPath: extra is String ? extra : null);
+    },
   ),
 ];

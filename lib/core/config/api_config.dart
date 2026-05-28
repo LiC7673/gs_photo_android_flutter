@@ -23,6 +23,11 @@ class ApiPaths {
   static const String uploadProgressPath = 'upload/{upload_id}/progress';
   static const String uploadMergePath = 'upload/{upload_id}/merge';
   static const String uploadCancelPath = 'upload/{file_id}/cancel';
+  // 文件下载接口
+  static const String fileDownloadInitPath = 'files/{file_id}/download/init';
+  static const String fileDownloadChunkPath = 'files/{file_id}/download/chunk';
+  static const String fileDownloadProgressPath =
+      'files/downloads/{download_id}/progress';
   // 重建接口
   static const String reconstructionCreateTaskPath = 'reconstruction/tasks';
   static const String reconstructionStartUploadedPath =

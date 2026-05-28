@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../config/api_config.dart';
 import '../config/reconstruction_config.dart';
 import 'dio_adapter.dart';
 import 'reconstruction_models.dart';
@@ -13,10 +14,8 @@ class ReconstructionService {
   final DioAdapter _adapter;
   final ReconstructionHook? onHook;
 
-  ReconstructionService({
-    DioAdapter? adapter,
-    this.onHook,
-  }) : _adapter = adapter ?? DioAdapter();
+  ReconstructionService({DioAdapter? adapter, this.onHook})
+    : _adapter = adapter ?? DioAdapter();
 
   Future<ReconstructionTaskResponse?> createTask(
     ReconstructionCreateTaskRequest request,
@@ -28,9 +27,13 @@ class ReconstructionService {
         ReconstructionConfig.getCreateTaskUrl(),
         data: request.toJson(),
       );
-      final result = ReconstructionTaskResponse.fromJson(_readObject(response.data));
+      final result = ReconstructionTaskResponse.fromJson(
+        _readObject(response.data),
+      );
       _emit('create_task:success', taskId: result.taskId);
-      debugPrint('[API] result createReconstructionTask taskId=${result.taskId}');
+      debugPrint(
+        '[API] result createReconstructionTask taskId=${result.taskId}',
+      );
       return result;
     } on DioException catch (e) {
       _emitError('create_task:error', e);
@@ -236,6 +239,165 @@ class ReconstructionService {
       debugPrint('[API] result downloadReconstructionResult failed error=$e');
       return null;
     }
+  }
+
+  Future<File?> downloadResultFile({
+    required String resultFileId,
+    String? taskId,
+    void Function(double progress)? onProgress,
+  }) async {
+    return downloadFile(
+      fileId: resultFileId,
+      taskId: taskId,
+      outputDirectoryName: 'results',
+      outputFilename: taskId == null ? null : '$taskId.obj',
+      onProgress: onProgress,
+    );
+  }
+
+  Future<File?> downloadFile({
+    required String fileId,
+    String? taskId,
+    String outputDirectoryName = 'downloads',
+    String? outputFilename,
+    void Function(double progress)? onProgress,
+  }) async {
+    _emit('file_download:start', taskId: taskId, payload: {'file_id': fileId});
+    debugPrint('[API] trigger downloadFile fileId=$fileId');
+
+    try {
+      final initResponse = await _adapter.post(
+        _fileDownloadInitUrl(fileId),
+        data: const <String, dynamic>{},
+      );
+      final initData = _readObject(initResponse.data);
+      final downloadId = (initData['download_id'] ?? '').toString();
+      if (downloadId.isEmpty) {
+        throw StateError('download_id is empty');
+      }
+
+      final filename = _safeFilename(
+        outputFilename ?? (initData['filename'] as String?) ?? '$fileId.bin',
+      );
+      final totalChunks =
+          (initData['total_chunks'] as num?)?.toInt() ??
+          _calculateTotalChunks(initData);
+      if (totalChunks <= 0) {
+        throw StateError('total_chunks is invalid: $totalChunks');
+      }
+
+      final directory = await getApplicationDocumentsDirectory();
+      final outputDir = Directory(p.join(directory.path, outputDirectoryName));
+      await outputDir.create(recursive: true);
+      final file = File(p.join(outputDir.path, filename));
+      final sink = file.openWrite();
+
+      try {
+        for (var index = 0; index < totalChunks; index++) {
+          final chunkResponse = await _adapter.get<List<int>>(
+            _fileDownloadChunkUrl(fileId),
+            queryParameters: {'download_id': downloadId, 'chunk_index': index},
+            options: Options(responseType: ResponseType.bytes),
+          );
+          final bytes = chunkResponse.data ?? const <int>[];
+          sink.add(bytes);
+
+          final progress = (index + 1) / totalChunks;
+          onProgress?.call(progress);
+          debugPrint(
+            '[API] result downloadResultFile chunk=${index + 1}/$totalChunks '
+            'bytes=${bytes.length}',
+          );
+        }
+      } finally {
+        await sink.close();
+      }
+
+      await getFileDownloadProgress(downloadId, taskId: taskId);
+
+      _emit(
+        'file_download:success',
+        taskId: taskId,
+        payload: {
+          'file_id': fileId,
+          'download_id': downloadId,
+          'path': file.path,
+        },
+      );
+      debugPrint('[API] result downloadFile fileId=$fileId path=${file.path}');
+      return file;
+    } on DioException catch (e) {
+      _emitError('file_download:error', e, taskId: taskId);
+      return null;
+    } catch (e) {
+      _emit(
+        'file_download:error',
+        taskId: taskId,
+        payload: {'file_id': fileId, 'error': e.toString()},
+      );
+      debugPrint('[API] result downloadFile failed error=$e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getFileDownloadProgress(
+    String downloadId, {
+    String? taskId,
+  }) async {
+    _emit(
+      'file_download_progress:start',
+      taskId: taskId,
+      payload: {'download_id': downloadId},
+    );
+    debugPrint('[API] trigger getFileDownloadProgress downloadId=$downloadId');
+    try {
+      final response = await _adapter.get(_fileDownloadProgressUrl(downloadId));
+      final progress = _readObject(response.data);
+      _emit(
+        'file_download_progress:success',
+        taskId: taskId,
+        payload: progress,
+      );
+      debugPrint(
+        '[API] result getFileDownloadProgress downloadId=$downloadId '
+        'progress=$progress',
+      );
+      return progress;
+    } on DioException catch (e) {
+      _emitError('file_download_progress:error', e, taskId: taskId);
+      return null;
+    } catch (e) {
+      _emit(
+        'file_download_progress:error',
+        taskId: taskId,
+        payload: {'download_id': downloadId, 'error': e.toString()},
+      );
+      debugPrint('[API] result getFileDownloadProgress failed error=$e');
+      return null;
+    }
+  }
+
+  String _fileDownloadInitUrl(String fileId) =>
+      ApiPaths.fileDownloadInitPath.replaceAll('{file_id}', fileId);
+
+  String _fileDownloadChunkUrl(String fileId) =>
+      ApiPaths.fileDownloadChunkPath.replaceAll('{file_id}', fileId);
+
+  String _fileDownloadProgressUrl(String downloadId) =>
+      ApiPaths.fileDownloadProgressPath.replaceAll('{download_id}', downloadId);
+
+  int _calculateTotalChunks(Map<String, dynamic> data) {
+    final fileSize = (data['file_size'] as num?)?.toInt();
+    final chunkSize = (data['chunk_size'] as num?)?.toInt();
+    if (fileSize == null || chunkSize == null || chunkSize <= 0) return 0;
+    return (fileSize + chunkSize - 1) ~/ chunkSize;
+  }
+
+  String _safeFilename(String filename) {
+    final normalized = filename.trim().isEmpty
+        ? 'reconstruction.ply'
+        : filename;
+    return normalized.replaceAll(RegExp(r'[^\w.\-]+'), '_');
   }
 
   void _emit(

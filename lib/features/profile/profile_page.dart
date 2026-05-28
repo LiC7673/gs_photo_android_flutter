@@ -166,6 +166,29 @@ class ProfilePage extends StatelessWidget {
   Widget _buildLogoutButton(BuildContext context) {
     return OutlinedButton(
       onPressed: () async {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF0B1026),
+            title: const Text('退出登录'),
+            content: const Text('确定要退出当前账号吗？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text(
+                  '退出',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true) return;
+        if (!context.mounted) return;
         await UserState.instance.logout();
         if (context.mounted) context.go(loginPath);
       },

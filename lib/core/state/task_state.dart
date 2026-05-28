@@ -13,13 +13,7 @@ enum TaskStatus {
   failed,
 }
 
-enum FileSyncStatus {
-  localOnly,
-  uploading,
-  synced,
-  downloading,
-  cloudOnly,
-}
+enum FileSyncStatus { localOnly, uploading, synced, downloading, cloudOnly }
 
 class StorageFile {
   final String fileId;
@@ -93,6 +87,8 @@ class ProcessingTask {
   final Map<String, dynamic> params;
   final List<StorageFile> files;
   final TaskStatus status;
+  final double progress;
+  final String? stage;
   final DateTime createdAt;
   final DateTime? updatedAt;
   final StorageFile? resultPly;
@@ -103,6 +99,8 @@ class ProcessingTask {
     required this.params,
     required this.files,
     required this.status,
+    this.progress = 0,
+    this.stage,
     required this.createdAt,
     this.updatedAt,
     this.resultPly,
@@ -113,6 +111,8 @@ class ProcessingTask {
     String? title,
     Map<String, dynamic>? params,
     TaskStatus? status,
+    double? progress,
+    String? stage,
     List<StorageFile>? files,
     DateTime? updatedAt,
     StorageFile? resultPly,
@@ -123,6 +123,8 @@ class ProcessingTask {
       params: params ?? this.params,
       files: files ?? this.files,
       status: status ?? this.status,
+      progress: progress ?? this.progress,
+      stage: stage ?? this.stage,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       resultPly: resultPly ?? this.resultPly,
@@ -136,6 +138,8 @@ class ProcessingTask {
       'params': params,
       'files': files.map((file) => file.toJson()).toList(),
       'status': status.name,
+      'progress': progress,
+      'stage': stage,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'result_ply': resultPly?.toJson(),
@@ -156,6 +160,8 @@ class ProcessingTask {
         json['status'] as String?,
         TaskStatus.draft,
       ),
+      progress: (json['progress'] as num?)?.toDouble() ?? 0,
+      stage: json['stage'] as String?,
       createdAt:
           DateTime.tryParse(json['created_at'] as String? ?? '') ??
           DateTime.now(),
@@ -238,6 +244,25 @@ class TaskState extends ChangeNotifier {
     final task = _tasks[taskId];
     if (task != null) {
       _tasks[taskId] = task.copyWith(status: status, updatedAt: DateTime.now());
+      _persistTasks();
+      notifyListeners();
+    }
+  }
+
+  void updateTaskProgress(
+    String taskId,
+    double progress, {
+    TaskStatus? status,
+    String? stage,
+  }) {
+    final task = _tasks[taskId];
+    if (task != null) {
+      _tasks[taskId] = task.copyWith(
+        status: status,
+        progress: progress.clamp(0, 1),
+        stage: stage,
+        updatedAt: DateTime.now(),
+      );
       _persistTasks();
       notifyListeners();
     }
