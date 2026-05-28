@@ -22,10 +22,10 @@ class CustomNavBar extends StatelessWidget {
           height: screenHeight * 0.11, // 从 0.1 增加到 0.11，提供更多缓冲
           decoration: BoxDecoration(
             // 降低不透明度，使背景模糊效果可见
-            color: const Color(0xFF03081C).withOpacity(0.8),
+            color: const Color(0xFF03081C).withValues(alpha: 0.8),
             border: Border(
               top: BorderSide(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 width: 0.5,
               ),
             ),
@@ -68,7 +68,7 @@ class CustomNavBar extends StatelessWidget {
                 color: isSelected ? activeColor : inactiveColor,
                 shadows: isSelected ? [
                   Shadow(
-                    color: activeColor.withOpacity(0.8),
+                    color: activeColor.withValues(alpha: 0.8),
                     blurRadius: 15,
                   ),
                 ] : null,
@@ -86,7 +86,7 @@ class CustomNavBar extends StatelessWidget {
                       border: Border.all(color: const Color(0xFF03081C), width: 1.5),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withOpacity(0.5),
+                          color: Colors.red.withValues(alpha: 0.5),
                           blurRadius: 4,
                         ),
                       ],

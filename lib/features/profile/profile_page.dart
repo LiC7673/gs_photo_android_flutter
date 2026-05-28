@@ -57,7 +57,7 @@ class ProfilePage extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           width: 0.8,
         ),
       ),
@@ -68,12 +68,12 @@ class ProfilePage extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.all(screenWidth * 0.05),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFFFF).withOpacity(0.05),
+              color: const Color(0xFFFFFFFF).withValues(alpha: 0.05),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(0.1),
+                  Colors.white.withValues(alpha: 0.1),
                   Colors.transparent,
                 ],
               ),
@@ -85,11 +85,11 @@ class ProfilePage extends StatelessWidget {
                   width: screenWidth * 0.18,
                   height: screenWidth * 0.18,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0072FF).withOpacity(0.8),
+                    color: const Color(0xFF0072FF).withValues(alpha: 0.8),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF0072FF).withOpacity(0.3),
+                        color: const Color(0xFF0072FF).withValues(alpha: 0.3),
                         blurRadius: 15,
                         spreadRadius: 2,
                       ),
@@ -118,8 +118,8 @@ class ProfilePage extends StatelessWidget {
                         child: Text(
                           '修改信息',
                           style: TextStyle(
-                            color: const Color(0xFF00C6FF).withOpacity(0.9),
-                            fontSize: screenWidth * 0.035,
+                            color: const Color(0xFF00C6FF).withValues(alpha: 0.9),
+                            fontSize: 15,
                             fontWeight: FontWeight.w500,
                             decoration: TextDecoration.underline,
                           ),
@@ -136,20 +136,19 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, IconData icon, String title) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: screenWidth * 0.03),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+  Widget _buildMenuItem(IconData icon, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(16),
-      ),
-      child: ListTile(
-        leading: Icon(icon, color: Colors.white.withOpacity(0.7), size: screenWidth * 0.06),
-        title: Text(title, style: TextStyle(color: Colors.white, fontSize: screenWidth * 0.04)),
-        trailing: Icon(Icons.chevron_right, color: Colors.white.withOpacity(0.3), size: screenWidth * 0.05),
-        onTap: () => debugPrint('点击了：$title'),
+        child: ListTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          leading: Icon(icon, color: Colors.white.withValues(alpha: 0.7)),
+          title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+          trailing: Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3)),
+          onTap: () => debugPrint('点击了：$title'),
+        ),
       ),
     );
   }
@@ -160,8 +159,8 @@ class ProfilePage extends StatelessWidget {
     return OutlinedButton(
       onPressed: () => Navigator.of(context).pop(), // 简单返回登录页
       style: OutlinedButton.styleFrom(
-        side: BorderSide(color: Colors.red.withOpacity(0.5)),
-        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1, vertical: screenWidth * 0.03),
+        side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: Text(

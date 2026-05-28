@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../core/widgets/task/task_item.dart';
 import '../../core/state/task_state.dart';
 

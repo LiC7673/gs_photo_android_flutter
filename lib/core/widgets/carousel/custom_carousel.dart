@@ -60,7 +60,7 @@ class _CustomCarouselState extends State<CustomCarousel> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -121,8 +121,8 @@ class _CustomCarouselState extends State<CustomCarousel> {
       height: indicatorHeight,
       width: isActive ? indicatorHeight * 3 : indicatorHeight,
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF00C6FF) : Colors.white.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(indicatorHeight / 2),
+        color: isActive ? const Color(0xFF00C6FF) : Colors.white.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(4),
       ),
     );
   }
