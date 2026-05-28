@@ -1,17 +1,11 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import '../config/upload_file_config.dart';
 import 'dio_adapter.dart';
 import 'upload_models.dart';
-import 'dart:convert'; // 顶部引入
 
-import 'package:flutter/foundation.dart';
-import 'dart:io';
-import 'dart:convert';
-import 'package:crypto/crypto.dart'; // 确保引入了 md5 依赖
 class UploadService {
   final DioAdapter _dioAdapter = DioAdapter();
 
@@ -40,11 +34,6 @@ class UploadService {
   Future<String> _calculateFileHash(File file) async {
     final bytes = await file.readAsBytes();
     return sha256.convert(bytes).toString();
-  }
-
-  /// 计算分片 MD5 (Etag)
-  String _calculateChunkMd5(List<int> chunk) {
-    return md5.convert(chunk).toString();
   }
 
   /// 初始化上传
@@ -94,9 +83,7 @@ class UploadService {
       queryParameters: {'chunk_index': chunkIndex},
       options: Options(
         contentType: 'application/octet-stream',
-        headers: {
-          'Content-Length': chunkData.length,
-        },
+        headers: {'Content-Length': chunkData.length},
       ),
     );
 
@@ -138,10 +125,13 @@ class UploadService {
   }
 
   /// 高层封装：完整上传文件流程
-  Future<MergeResponse> uploadFile(String filePath, {Function(double)? onProgress}) async {
+  Future<MergeResponse> uploadFile(
+    String filePath, {
+    Function(double)? onProgress,
+  }) async {
     final file = File(filePath);
     final fileSize = await file.length();
-    
+
     // 1. 初始化
     final initData = await initializeUpload(filePath);
     final uploadId = initData.uploadId;
@@ -158,16 +148,16 @@ class UploadService {
       if (end > fileSize) end = fileSize;
 
       final chunkData = bytes.sublist(start, end);
-      
+
       // 可以先检查进度，实现断点续传（此处简化为直接上传）
       final chunkRes = await uploadChunk(
         uploadId: uploadId,
         chunkIndex: i,
         chunkData: chunkData,
       );
-      
+
       parts.add(MergeRequestPart(chunkIndex: i, etag: chunkRes.etag));
-      
+
       if (onProgress != null) {
         onProgress((i + 1) / totalChunks);
       }

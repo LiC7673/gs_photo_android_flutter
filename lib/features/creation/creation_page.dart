@@ -16,15 +16,21 @@ class CreationPage extends StatefulWidget {
 
 class _CreationPageState extends State<CreationPage> {
   // 1. 任务名称
-  final TextEditingController _taskNameController = TextEditingController(text: '我的 3D 重建项目');
-  
+  final TextEditingController _taskNameController = TextEditingController(
+    text: '我的 3D 重建项目',
+  );
+
   // 2. 重建类型
   String _reconstructionType = 'object'; // 'object' or 'scene'
-  
+
   // 3. 重建参数
   double _resolutionScale = 0.5; // 0.1 - 1.0
   String _selectedAlgorithm = 'AnySplat';
-  final List<String> _algorithms = ['AnySplat', '3DGS-Vanilla', 'Mip-Splatting'];
+  final List<String> _algorithms = [
+    'AnySplat',
+    '3DGS-Vanilla',
+    'Mip-Splatting',
+  ];
 
   // 4. 图片素材
   final ImagePicker _picker = ImagePicker();
@@ -62,13 +68,15 @@ class _CreationPageState extends State<CreationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final bool canStart = _selectedImages.length > 5;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('创建 3D 任务', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          '创建 3D 任务',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -79,132 +87,149 @@ class _CreationPageState extends State<CreationPage> {
       body: SciFiBackground(
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. 任务名称
-              _buildSectionTitle('任务名称'),
-              _buildGlassCard(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: TextField(
-                  controller: _taskNameController,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                  decoration: InputDecoration(
-                    hintText: '输入任务名称...',
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                    border: InputBorder.none,
-                    icon: const Icon(Icons.edit_note, color: Color(0xFF00C6FF)),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. 任务名称
+                _buildSectionTitle('任务名称'),
+                _buildGlassCard(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
                   ),
-                ),
-              ),
-
-              SizedBox(height: screenHeight * 0.03),
-
-              // 2. 重建类型
-              _buildSectionTitle('重建类型'),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTypeCard(
-                      context,
-                      '物体类', 
-                      Icons.inventory_2_outlined, 
-                      _reconstructionType == 'object',
-                      () => setState(() => _reconstructionType = 'object'),
-                    ),
-                  ),
-                  SizedBox(width: screenHeight * 0.02),
-                  Expanded(
-                    child: _buildTypeCard(
-                      context,
-                      '场景类', 
-                      Icons.landscape_outlined, 
-                      _reconstructionType == 'scene',
-                      () => setState(() => _reconstructionType = 'scene'),
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: screenHeight * 0.03),
-
-              // 3. 重建参数
-              _buildSectionTitle('重建参数'),
-              _buildGlassCard(
-                padding: EdgeInsets.all(screenHeight * 0.025),
-                child: Column(
-                  children: [
-                    _buildParamRow(
-                      '压缩分辨率 (${_resolutionScale.toStringAsFixed(1)})', 
-                      _buildResolutionSlider(context),
-                    ),
-                    Divider(color: Colors.white10, height: screenHeight * 0.04),
-                    _buildParamRow(
-                      '算法选择', 
-                      _buildAlgorithmSelector(context),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: screenHeight * 0.03),
-
-              // 4. 上传文件 (图片)
-              _buildSectionTitle('素材管理 (${_selectedImages.length} 张)'),
-              _buildGlassCard(
-                padding: EdgeInsets.all(screenHeight * 0.02),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _buildActionButton(context, '本地相册', Icons.photo_library_outlined, _pickFromGallery),
-                        SizedBox(width: screenHeight * 0.015),
-                        _buildActionButton(context, '现场拍摄', Icons.camera_alt_outlined, _takeFromCamera),
-                      ],
-                    ),
-                    if (_selectedImages.isNotEmpty) ...[
-                      SizedBox(height: screenHeight * 0.02),
-                      SizedBox(
-                        height: screenHeight * 0.12,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _selectedImages.length,
-                          itemBuilder: (context, index) {
-                            return _buildImageThumbnail(context, index);
-                          },
-                        ),
+                  child: TextField(
+                    controller: _taskNameController,
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    decoration: InputDecoration(
+                      hintText: '输入任务名称...',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.3),
                       ),
-                    ],
+                      border: InputBorder.none,
+                      icon: const Icon(
+                        Icons.edit_note,
+                        color: Color(0xFF00C6FF),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // 2. 重建类型
+                _buildSectionTitle('重建类型'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTypeCard(
+                        context,
+                        '物体类',
+                        Icons.inventory_2_outlined,
+                        _reconstructionType == 'object',
+                        () => setState(() => _reconstructionType = 'object'),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildTypeCard(
+                        context,
+                        '场景类',
+                        Icons.landscape_outlined,
+                        _reconstructionType == 'scene',
+                        () => setState(() => _reconstructionType = 'scene'),
+                      ),
+                    ),
                   ],
                 ),
-              ),
 
-              SizedBox(height: screenHeight * 0.05),
+                const SizedBox(height: 24),
 
-              GradientButton(
-                label: canStart ? '开始 3DGS 重建' : '请至少选择 6 张图片',
-                onPressed: canStart ? () {
-                  context.push(
-                    '$homeTabPath/$creationConfigPath/$uploadProgressPath',
-                    extra: {
-                      'images': _selectedImages,
-                      'taskName': _taskNameController.text,
-                      'type': _reconstructionType,
-                      'resolution': _resolutionScale,
-                      'algorithm': _selectedAlgorithm,
-                    },
-                  );
-                } : null,
-                height: screenHeight * 0.08,
-              ),
-              const SizedBox(height: 30),
-            ],
+                // 3. 重建参数
+                _buildSectionTitle('重建参数'),
+                _buildGlassCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      _buildParamRow(
+                        '压缩分辨率 (${_resolutionScale.toStringAsFixed(1)})',
+                        _buildResolutionSlider(context),
+                      ),
+                      const Divider(color: Colors.white10, height: 32),
+                      _buildParamRow('算法选择', _buildAlgorithmSelector(context)),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // 4. 上传文件 (图片)
+                _buildSectionTitle('素材管理 (${_selectedImages.length} 张)'),
+                _buildGlassCard(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          _buildActionButton(
+                            context,
+                            '本地相册',
+                            Icons.photo_library_outlined,
+                            _pickFromGallery,
+                          ),
+                          const SizedBox(width: 12),
+                          _buildActionButton(
+                            context,
+                            '现场拍摄',
+                            Icons.camera_alt_outlined,
+                            _takeFromCamera,
+                          ),
+                        ],
+                      ),
+                      if (_selectedImages.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 96,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _selectedImages.length,
+                            itemBuilder: (context, index) {
+                              return _buildImageThumbnail(context, index);
+                            },
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                GradientButton(
+                  label: canStart ? '开始 3DGS 重建' : '请至少选择 6 张图片',
+                  onPressed: canStart
+                      ? () {
+                          context.push(
+                            '$homeTabPath/$creationConfigPath/$uploadProgressPath',
+                            extra: {
+                              'images': _selectedImages,
+                              'taskName': _taskNameController.text,
+                              'type': _reconstructionType,
+                              'resolution': _resolutionScale,
+                              'algorithm': _selectedAlgorithm,
+                            },
+                          );
+                        }
+                      : null,
+                  height: 56,
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ),
       ),
-    )
     );
   }
 
@@ -215,7 +240,7 @@ class _CreationPageState extends State<CreationPage> {
         title,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 18,
+          fontSize: 20,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.0,
         ),
@@ -223,17 +248,26 @@ class _CreationPageState extends State<CreationPage> {
     );
   }
 
-  Widget _buildGlassCard({required Widget child, EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 20, vertical: 18)}) {
+  Widget _buildGlassCard({
+    required Widget child,
+    EdgeInsets padding = const EdgeInsets.symmetric(
+      horizontal: 20,
+      vertical: 16,
+    ),
+  }) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.1),
+          width: 1,
+        ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             padding: padding,
             color: const Color(0xFFFFFFFF).withValues(alpha: 0.05),
@@ -244,31 +278,46 @@ class _CreationPageState extends State<CreationPage> {
     );
   }
 
-  Widget _buildTypeCard(BuildContext context, String label, IconData icon, bool isSelected, VoidCallback onTap) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
+  Widget _buildTypeCard(
+    BuildContext context,
+    String label,
+    IconData icon,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: screenHeight * 0.12,
+        height: 96,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF00C6FF) : Colors.white.withValues(alpha: 0.1),
+            color: isSelected
+                ? const Color(0xFF00C6FF)
+                : Colors.white.withValues(alpha: 0.1),
             width: isSelected ? 2 : 1,
           ),
-          color: isSelected ? const Color(0xFF00C6FF).withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05),
+          color: isSelected
+              ? const Color(0xFF00C6FF).withValues(alpha: 0.1)
+              : Colors.white.withValues(alpha: 0.05),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isSelected ? const Color(0xFF00C6FF) : Colors.white70, size: screenHeight * 0.04),
-            SizedBox(height: screenHeight * 0.01),
-            Text(label, style: TextStyle(
-              color: isSelected ? Colors.white : Colors.white70, 
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              fontSize: screenHeight * 0.018,
-            )),
+            Icon(
+              icon,
+              color: isSelected ? const Color(0xFF00C6FF) : Colors.white70,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
           ],
         ),
       ),
@@ -286,10 +335,8 @@ class _CreationPageState extends State<CreationPage> {
   }
 
   Widget _buildResolutionSlider(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return SizedBox(
-      width: screenWidth * 0.35,
+      width: 140,
       child: SliderTheme(
         data: SliderThemeData(
           trackHeight: 2,
@@ -310,13 +357,11 @@ class _CreationPageState extends State<CreationPage> {
   }
 
   Widget _buildAlgorithmSelector(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: screenHeight * 0.015, vertical: screenHeight * 0.005),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButton<String>(
         value: _selectedAlgorithm,
@@ -326,7 +371,10 @@ class _CreationPageState extends State<CreationPage> {
         items: _algorithms.map((String value) {
           return DropdownMenuItem<String>(
             value: value,
-            child: Text(value, style: TextStyle(color: Colors.white, fontSize: screenHeight * 0.018)),
+            child: Text(
+              value,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
           );
         }).toList(),
         onChanged: (newValue) {
@@ -336,14 +384,17 @@ class _CreationPageState extends State<CreationPage> {
     );
   }
 
-  Widget _buildActionButton(BuildContext context, String label, IconData icon, VoidCallback onTap) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
+  Widget _buildActionButton(
+    BuildContext context,
+    String label,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: screenHeight * 0.015),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
@@ -352,9 +403,12 @@ class _CreationPageState extends State<CreationPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: const Color(0xFF00C6FF), size: screenHeight * 0.025),
-              SizedBox(width: screenHeight * 0.01),
-              Text(label, style: TextStyle(color: Colors.white, fontSize: screenHeight * 0.018)),
+              Icon(icon, color: const Color(0xFF00C6FF), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
             ],
           ),
         ),
@@ -363,12 +417,10 @@ class _CreationPageState extends State<CreationPage> {
   }
 
   Widget _buildImageThumbnail(BuildContext context, int index) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Container(
-      margin: EdgeInsets.only(right: screenHeight * 0.015),
-      width: screenHeight * 0.12,
-      height: screenHeight * 0.12,
+      margin: const EdgeInsets.only(right: 12),
+      width: 96,
+      height: 96,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         image: DecorationImage(

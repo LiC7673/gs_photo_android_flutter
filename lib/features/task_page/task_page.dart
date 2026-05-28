@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/widgets/task/task_item.dart';
-import '../../core/state/task_state.dart';
 
 class TaskPage extends StatelessWidget {
   const TaskPage({super.key});
@@ -55,10 +53,5 @@ class TaskPage extends StatelessWidget {
     //     ),
     //   ),
     // );
-  }
-
-  String _formatDateTime(DateTime dt) {
-    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
-           '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }

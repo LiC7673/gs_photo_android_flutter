@@ -24,8 +24,6 @@ class TaskItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     ImageProvider? imageProvider;
     if (localThumbnailPath != null && localThumbnailPath!.isNotEmpty) {
       imageProvider = FileImage(File(localThumbnailPath!));
@@ -34,7 +32,7 @@ class TaskItem extends StatelessWidget {
     }
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: screenWidth * 0.02, horizontal: screenWidth * 0.04),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
@@ -47,7 +45,7 @@ class TaskItem extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
-            padding: EdgeInsets.all(screenWidth * 0.03),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: const Color(0xFFFFFFFF).withValues(alpha: 0.05),
               gradient: LinearGradient(
@@ -63,19 +61,23 @@ class TaskItem extends StatelessWidget {
               children: [
                 // 1. 缩略图区域
                 Container(
-                  width: screenWidth * 0.22,
-                  height: screenWidth * 0.22,
+                  width: 88,
+                  height: 88,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: const Color(0xFF00C6FF).withValues(alpha: 0.3),
                       width: 1.5,
                     ),
-                    image: imageProvider != null ? DecorationImage(
-                      image: imageProvider,
-                      fit: BoxFit.cover,
-                    ) : null,
-                    color: imageProvider == null ? Colors.white.withOpacity(0.1) : null,
+                    image: imageProvider != null
+                        ? DecorationImage(
+                            image: imageProvider,
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    color: imageProvider == null
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : null,
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFF00C6FF).withValues(alpha: 0.1),
@@ -84,10 +86,15 @@ class TaskItem extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: imageProvider == null ? const Icon(Icons.image_not_supported_outlined, color: Colors.white24) : null,
+                  child: imageProvider == null
+                      ? const Icon(
+                          Icons.image_not_supported_outlined,
+                          color: Colors.white24,
+                        )
+                      : null,
                 ),
-                SizedBox(width: screenWidth * 0.04),
-                
+                const SizedBox(width: 16),
+
                 // 2. 信息展示区域
                 Expanded(
                   child: Column(
@@ -97,12 +104,12 @@ class TaskItem extends StatelessWidget {
                         title,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: screenWidth * 0.045,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
                         ),
                       ),
-                      SizedBox(height: screenWidth * 0.015),
+                      const SizedBox(height: 8),
                       Text(
                         creationTime,
                         style: TextStyle(
@@ -110,39 +117,34 @@ class TaskItem extends StatelessWidget {
                           fontSize: 13,
                         ),
                       ),
-                      SizedBox(height: screenWidth * 0.025),
+                      const SizedBox(height: 8),
                       Text(
                         status,
                         style: TextStyle(
                           color: const Color(0xFF00FFC2), // 霓虹绿
-                          fontSize: screenWidth * 0.035,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           shadows: const [
-                            Shadow(
-                              color: Color(0xFF00FFC2),
-                              blurRadius: 10,
-                            ),
+                            Shadow(color: Color(0xFF00FFC2), blurRadius: 12),
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                
+
                 // 3. 按钮操作区域
                 Column(
                   children: [
                     _buildActionButton(
-                      screenWidth: screenWidth,
                       label: '查看',
                       onPressed: onView,
                       gradient: const LinearGradient(
                         colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
                       ),
                     ),
-                    SizedBox(height: screenWidth * 0.025),
+                    const SizedBox(height: 8),
                     _buildActionButton(
-                      screenWidth: screenWidth,
                       label: '删除',
                       onPressed: onDelete,
                       gradient: const LinearGradient(
@@ -160,7 +162,6 @@ class TaskItem extends StatelessWidget {
   }
 
   Widget _buildActionButton({
-    required double screenWidth,
     required String label,
     required VoidCallback onPressed,
     required Gradient gradient,
@@ -168,14 +169,16 @@ class TaskItem extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        width: screenWidth * 0.18,
-        height: screenWidth * 0.09,
+        width: 72,
+        height: 36,
         decoration: BoxDecoration(
           gradient: gradient,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: (gradient as LinearGradient).colors.first.withValues(alpha: 0.3),
+              color: (gradient as LinearGradient).colors.first.withValues(
+                alpha: 0.3,
+              ),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -186,7 +189,7 @@ class TaskItem extends StatelessWidget {
             label,
             style: TextStyle(
               color: Colors.white,
-              fontSize: screenWidth * 0.035,
+              fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -195,4 +198,3 @@ class TaskItem extends StatelessWidget {
     );
   }
 }
-

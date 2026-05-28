@@ -17,37 +17,40 @@ class GradientButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isEnabled = onPressed != null;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final buttonHeight = height ?? screenHeight * 0.08;
+    final buttonHeight = height ?? 56.0;
 
     return Container(
       width: double.infinity,
       height: buttonHeight,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
-        gradient: isEnabled ? const LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            Color(0xFF00C6FF), // 亮青色
-            Color(0xFF0072FF), // 蓝色
-            Color(0xFFB100FF), // 紫色
-          ],
-        ) : LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            Colors.grey.withValues(alpha: 0.3),
-            Colors.grey.withValues(alpha: 0.1),
-          ],
-        ),
-        boxShadow: isEnabled ? [
-          BoxShadow(
-            color: Colors.purple.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ] : null,
+        gradient: isEnabled
+            ? const LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Color(0xFF00C6FF), // 亮青色
+                  Color(0xFF0072FF), // 蓝色
+                  Color(0xFFB100FF), // 紫色
+                ],
+              )
+            : LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.grey.withValues(alpha: 0.3),
+                  Colors.grey.withValues(alpha: 0.1),
+                ],
+              ),
+        boxShadow: isEnabled
+            ? [
+                BoxShadow(
+                  color: Colors.purple.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -63,7 +66,7 @@ class GradientButton extends StatelessWidget {
                   label,
                   style: TextStyle(
                     color: isEnabled ? Colors.white : Colors.white24,
-                    fontSize: buttonHeight * 0.3, // 约按钮高度的 30%
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.2,
                   ),
@@ -73,7 +76,7 @@ class GradientButton extends StatelessWidget {
                   child: Icon(
                     Icons.chevron_right,
                     color: isEnabled ? Colors.white : Colors.white10,
-                    size: buttonHeight * 0.45,
+                    size: 24,
                   ),
                 ),
               ],

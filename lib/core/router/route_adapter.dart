@@ -8,12 +8,19 @@ import '../../features/recommendation_page/recommendation_page.dart';
 import '../../features/profile/profile_page.dart';
 
 class RouteAdapter {
+  static const Color _routeBackgroundColor = Color(0xFF03081C);
+
+  static Widget _withRouteBackground(Widget child) {
+    return ColoredBox(color: _routeBackgroundColor, child: child);
+  }
+
   /// 递归将自定义的 AppRouteNode 转换为 GoRoute
   static List<GoRoute> _convertToGoRoutes(List<AppRouteNode> nodes) {
     return nodes.map((node) {
       return GoRoute(
         path: node.path,
-        builder: node.builder,
+        builder: (context, state) =>
+            _withRouteBackground(node.builder(context, state)),
         routes: _convertToGoRoutes(node.children),
       );
     }).toList();
@@ -39,7 +46,8 @@ class RouteAdapter {
               routes: [
                 GoRoute(
                   path: homeTabPath,
-                  builder: (context, state) => const MainScreen(),
+                  builder: (context, state) =>
+                      _withRouteBackground(const MainScreen()),
                   routes: _convertToGoRoutes(featureRoutes), // 挂载功能路由在首页分支下
                 ),
               ],
@@ -49,7 +57,8 @@ class RouteAdapter {
               routes: [
                 GoRoute(
                   path: taskTabPath,
-                  builder: (context, state) => const TaskPage(),
+                  builder: (context, state) =>
+                      _withRouteBackground(const TaskPage()),
                 ),
               ],
             ),
@@ -58,7 +67,8 @@ class RouteAdapter {
               routes: [
                 GoRoute(
                   path: recommendationTabPath,
-                  builder: (context, state) => const RecommendationPage(),
+                  builder: (context, state) =>
+                      _withRouteBackground(const RecommendationPage()),
                 ),
               ],
             ),
@@ -78,7 +88,8 @@ class RouteAdapter {
               routes: [
                 GoRoute(
                   path: profileTabPath,
-                  builder: (context, state) => const ProfilePage(),
+                  builder: (context, state) =>
+                      _withRouteBackground(const ProfilePage()),
                 ),
               ],
             ),

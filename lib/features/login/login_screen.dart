@@ -31,14 +31,15 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入用户名和密码')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请输入用户名和密码')));
       return;
     }
     setState(() => _isLoading = true);
     context.go(homeTabPath);
   }
+
   //   try {
   //     // TODO: 实现真实的登录鉴权逻辑
   //     debugPrint('登录尝试: $username');
@@ -68,18 +69,20 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // 注册时也发送 "login in" 作为测试
       final response = await _apiClient.post(
-          '/register', data: {"message": "login in"});
+        '/register',
+        data: {"message": "login in"},
+      );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('注册成功: ${response.data}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('注册成功: ${response.data}')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('请求失败: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('请求失败: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -88,66 +91,61 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
       body: SciFiBackground(
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     '欢迎登录',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
-                      fontSize: screenWidth * 0.08,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.06),
-                  
+                  const SizedBox(height: 48),
+
                   // 用户名输入框
                   _buildTextField(
-                    context: context,
                     controller: _usernameController,
                     hint: '用户名',
                     icon: Icons.person_outline,
                   ),
-                  SizedBox(height: screenHeight * 0.025),
-                  
+                  const SizedBox(height: 20),
+
                   // 密码输入框
                   _buildTextField(
-                    context: context,
                     controller: _passwordController,
                     hint: '密码',
                     icon: Icons.lock_outline,
                     isPassword: true,
                   ),
-                  SizedBox(height: screenHeight * 0.04),
+                  const SizedBox(height: 32),
 
                   if (_isLoading)
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
-                      child: const CircularProgressIndicator(color: Colors.white),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: CircularProgressIndicator(color: Colors.white),
                     )
                   else ...[
                     GradientButton(
                       label: '登 录',
                       onPressed: _handleLogin,
-                      height: screenHeight * 0.08,
+                      height: 56,
                     ),
-                    SizedBox(height: screenHeight * 0.025),
+                    const SizedBox(height: 20),
                     GlassButton(
                       label: '注 册',
                       onPressed: _handleRegister,
-                      height: screenHeight * 0.08,
+                      height: 56,
                     ),
                   ],
-                  SizedBox(height: screenHeight * 0.05), // 底部缓冲，防止键盘顶起时溢出
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -158,14 +156,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildTextField({
-    required BuildContext context,
     required TextEditingController controller,
     required String hint,
     required IconData icon,
     bool isPassword = false,
   }) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
@@ -181,7 +176,10 @@ class _LoginScreenState extends State<LoginScreen> {
           hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
           prefixIcon: Icon(icon, color: Colors.white),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: screenHeight * 0.02),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
         ),
       ),
     );

@@ -19,23 +19,25 @@ class ReconstructionUploadPage extends StatefulWidget {
   final Map<String, dynamic>? params;
 
   const ReconstructionUploadPage({
-    super.key, 
-    this.images, 
+    super.key,
+    this.images,
     this.taskName,
     this.params,
   });
 
   @override
-  State<ReconstructionUploadPage> createState() => _ReconstructionUploadPageState();
+  State<ReconstructionUploadPage> createState() =>
+      _ReconstructionUploadPageState();
 }
 
 class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
   final ReconstructionService _reconstructionService = ReconstructionService();
   final UploadService _uploadService = UploadService();
   final ImagePicker _picker = ImagePicker();
-  
+
   List<XFile> _selectedImages = [];
-  String _currentStatus = 'ready'; // ready, compressing, uploading, processing, completed, failed
+  String _currentStatus =
+      'ready'; // ready, compressing, uploading, processing, completed, failed
   String? _taskId;
   double _progress = 0.0;
   Timer? _statusTimer;
@@ -70,14 +72,17 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
     try {
       final encoder = ZipFileEncoder();
       final directory = await getTemporaryDirectory();
-      final zipPath = p.join(directory.path, 'upload_${DateTime.now().millisecondsSinceEpoch}.zip');
-      
+      final zipPath = p.join(
+        directory.path,
+        'upload_${DateTime.now().millisecondsSinceEpoch}.zip',
+      );
+
       encoder.create(zipPath);
       for (var image in _selectedImages) {
         encoder.addFile(File(image.path));
       }
       encoder.close();
-      
+
       return zipPath;
     } catch (e) {
       debugPrint('压缩失败: $e');
@@ -96,13 +101,17 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
       taskId: localTaskId,
       title: widget.taskName ?? '未命名任务',
       params: widget.params ?? {},
-      files: _selectedImages.map((f) => StorageFile(
-        fileId: f.name,
-        localPath: f.path,
-        status: FileSyncStatus.localOnly,
-        md5: '', // 初始占位
-        size: 0,
-      )).toList(),
+      files: _selectedImages
+          .map(
+            (f) => StorageFile(
+              fileId: f.name,
+              localPath: f.path,
+              status: FileSyncStatus.localOnly,
+              md5: '', // 初始占位
+              size: 0,
+            ),
+          )
+          .toList(),
       status: TaskStatus.draft,
       createdAt: DateTime.now(),
     );
@@ -145,7 +154,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
           'algorithm': widget.params?['algorithm'] ?? 'AnySplat',
           "cuda_device": "1",
           "python_path": "/data1/lzh/anaconda3/envs/anysplat/bin/python",
-          "anysplat_path": "/data1/lzh/lzy/AnySplat"
+          "anysplat_path": "/data1/lzh/lzy/AnySplat",
         },
       );
 
@@ -157,10 +166,12 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
 
       // 将本地临时 ID 映射为服务端真正的任务 ID (或者保持关联)
       // 这里为了简单，我们更新状态并记录服务端 ID
-      taskState.upsertTask(initialTask.copyWith(
-        status: TaskStatus.processing,
-        updatedAt: DateTime.now(),
-      ));
+      taskState.upsertTask(
+        initialTask.copyWith(
+          status: TaskStatus.processing,
+          updatedAt: DateTime.now(),
+        ),
+      );
 
       setState(() {
         _taskId = serverTaskId;
@@ -172,7 +183,6 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
       // 清理临时 zip
       final zipFile = File(zipPath);
       if (await zipFile.exists()) await zipFile.delete();
-
     } catch (e) {
       debugPrint('处理流程失败: $e');
       taskState.updateTaskStatus(localTaskId, TaskStatus.failed);
@@ -182,7 +192,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
 
   void _startPolling(String serverTaskId, String localTaskId) {
     final taskState = Provider.of<TaskState>(context, listen: false);
-    
+
     _statusTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       final statusData = await _reconstructionService.checkStatus(serverTaskId);
       if (statusData == null) return;
@@ -213,9 +223,9 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
   Future<void> _downloadAndPreview(String taskId) async {
     // 这里可以添加下载并跳转预览逻辑
     debugPrint('任务完成，ID: $taskId');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('重建完成！模型已准备就绪。')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('重建完成！模型已准备就绪。')));
   }
 
   @override
@@ -226,9 +236,6 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -245,44 +252,49 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Padding(
-              padding: EdgeInsets.all(screenWidth * 0.06),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(height: screenHeight * 0.1),
+                  const SizedBox(height: 80),
                   if (_currentStatus == 'ready') ...[
-                Icon(Icons.cloud_upload_outlined, size: screenWidth * 0.2, color: const Color(0xFF00C6FF)),
-                SizedBox(height: screenHeight * 0.025),
-                Text(
-                  _selectedImages.isEmpty ? '请选择需要重建的图片' : '已选择 ${_selectedImages.length} 张图片',
-                  style: TextStyle(color: Colors.white, fontSize: screenWidth * 0.045),
-                ),
-                SizedBox(height: screenHeight * 0.05),
-                ElevatedButton(
-                  onPressed: _pickImages,
-                  child: const Text('从相册选择图片'),
-                ),
-                SizedBox(height: screenHeight * 0.025),
-                if (_selectedImages.isNotEmpty)
-                  GradientButton(
-                    label: '开始上传并重建',
-                    onPressed: _startProcess,
-                    height: screenHeight * 0.08,
-                  ),
-              ] else ...[
-                _buildStatusUI(context),
-              ]
-            ],
+                    const Icon(
+                      Icons.cloud_upload_outlined,
+                      size: 80,
+                      color: Color(0xFF00C6FF),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      _selectedImages.isEmpty
+                          ? '请选择需要重建的图片'
+                          : '已选择 ${_selectedImages.length} 张图片',
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    const SizedBox(height: 40),
+                    ElevatedButton(
+                      onPressed: _pickImages,
+                      child: const Text('从相册选择图片'),
+                    ),
+                    const SizedBox(height: 20),
+                    if (_selectedImages.isNotEmpty)
+                      GradientButton(
+                        label: '开始上传并重建',
+                        onPressed: _startProcess,
+                        height: 56,
+                      ),
+                  ] else ...[
+                    _buildStatusUI(context),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
-    )
-    ));
+    );
   }
 
   Widget _buildStatusUI(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
     String message = '';
     IconData icon = Icons.sync;
     Color color = const Color(0xFF00C6FF);
@@ -314,20 +326,40 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
 
     return Column(
       children: [
-        Icon(icon, size: screenWidth * 0.2, color: color),
-        SizedBox(height: screenHeight * 0.04),
-        Text(message, style: TextStyle(color: Colors.white, fontSize: screenWidth * 0.05, fontWeight: FontWeight.bold)),
-        SizedBox(height: screenHeight * 0.05),
+        Icon(icon, size: 80, color: color),
+        const SizedBox(height: 32),
+        Text(
+          message,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 40),
         LinearProgressIndicator(
           value: _progress,
           backgroundColor: Colors.white10,
           color: color,
-          minHeight: screenHeight * 0.01,
+          minHeight: 8,
         ),
-        SizedBox(height: screenHeight * 0.025),
-        Text('${(_progress * 100).toInt()}%', style: TextStyle(color: color, fontSize: screenWidth * 0.04)),
+        const SizedBox(height: 20),
+        Text(
+          '${(_progress * 100).toInt()}%',
+          style: TextStyle(color: color, fontSize: 16),
+        ),
+        if (_currentStatus == 'completed' && _taskId != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            '任务 ID: $_taskId',
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+        ],
         if (_currentStatus == 'failed')
-          TextButton(onPressed: () => setState(() => _currentStatus = 'ready'), child: const Text('返回重试', style: TextStyle(color: Colors.white70))),
+          TextButton(
+            onPressed: () => setState(() => _currentStatus = 'ready'),
+            child: const Text('返回重试', style: TextStyle(color: Colors.white70)),
+          ),
       ],
     );
   }

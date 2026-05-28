@@ -1,5 +1,3 @@
-
-
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -24,11 +22,7 @@ class LocalWebServer {
       serveFilesOutsidePath: false,
     );
 
-    _server = await shelf_io.serve(
-      handler,
-      InternetAddress.loopbackIPv4,
-      0,
-    );
+    _server = await shelf_io.serve(handler, InternetAddress.loopbackIPv4, 0);
 
     return Uri.parse('http://127.0.0.1:${_server!.port}/');
   }

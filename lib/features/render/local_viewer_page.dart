@@ -82,7 +82,9 @@ class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
   }
 
   Future<void> _resetCamera() async {
-    await _controller?.runJavaScript('window.resetCamera && window.resetCamera();');
+    await _controller?.runJavaScript(
+      'window.resetCamera && window.resetCamera();',
+    );
   }
 
   Future<void> _toggleAutoRotate() async {
@@ -111,12 +113,6 @@ class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
     );
   }
 
-  Future<void> _loadModel(String fileName) async {
-    await _controller?.runJavaScript(
-      'window.loadSplat && window.loadSplat("/models/$fileName");',
-    );
-  }
-
   @override
   void dispose() {
     _server.stop();
@@ -126,7 +122,6 @@ class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
-    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -142,13 +137,9 @@ class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            if (controller != null)
-              WebViewWidget(controller: controller),
+            if (controller != null) WebViewWidget(controller: controller),
 
-            if (_loading)
-              const Center(
-                child: CircularProgressIndicator(),
-              ),
+            if (_loading) const Center(child: CircularProgressIndicator()),
 
             if (_error != null)
               Center(
@@ -164,8 +155,8 @@ class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
 
             if (controller != null)
               Positioned(
-                right: screenWidth * 0.04,
-                bottom: screenWidth * 0.06,
+                right: 16,
+                bottom: 24,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -174,21 +165,19 @@ class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
                       onPressed: _resetCamera,
                       child: const Icon(Icons.center_focus_strong),
                     ),
-                    SizedBox(height: screenWidth * 0.03),
+                    const SizedBox(height: 12),
                     FloatingActionButton.small(
                       heroTag: 'auto_rotate',
                       onPressed: _toggleAutoRotate,
-                      child: Icon(
-                        _autoRotate ? Icons.pause : Icons.threesixty,
-                      ),
+                      child: Icon(_autoRotate ? Icons.pause : Icons.threesixty),
                     ),
-                    SizedBox(height: screenWidth * 0.03),
+                    const SizedBox(height: 12),
                     FloatingActionButton.small(
                       heroTag: 'rotate_only',
                       onPressed: _setRotateOnlyMode,
                       child: const Icon(Icons.screen_rotation),
                     ),
-                    SizedBox(height: screenWidth * 0.03),
+                    const SizedBox(height: 12),
                     FloatingActionButton.small(
                       heroTag: 'free_view',
                       onPressed: _setFreeViewMode,

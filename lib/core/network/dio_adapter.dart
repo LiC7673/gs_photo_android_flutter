@@ -8,45 +8,76 @@ class DioAdapter {
   DioAdapter() {
     BaseOptions options = BaseOptions(
       baseUrl: "${ApiPaths.baseUrl}:${ApiPaths.port}${ApiPaths.publicHead}",
-      connectTimeout: const Duration(milliseconds:ApiPaths.connectTimeout),
+      connectTimeout: const Duration(milliseconds: ApiPaths.connectTimeout),
       receiveTimeout: const Duration(milliseconds: ApiPaths.receiveTimeout),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
     );
-    this.options=options;
+    this.options = options;
     dio = Dio(options);
 
     // 自动注入认证 Token
-    dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        final token = UserState.instance.token;
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        return handler.next(options);
-      },
-    ));
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = UserState.instance.token;
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+      ),
+    );
 
-    dio.interceptors.add(LogInterceptor(
-      requestBody: true,
-      responseBody: true,
-    ));
+    dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
   }
 
-  Future<Response<T>> get<T>(String path, {Map<String, dynamic>? queryParameters, Options? options}) async {
+  Future<Response<T>> get<T>(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
     return dio.get<T>(path, queryParameters: queryParameters, options: options);
   }
 
-  Future<Response<T>> post<T>(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
-    return dio.post<T>(path, data: data, queryParameters: queryParameters, options: options);
+  Future<Response<T>> post<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return dio.post<T>(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
   }
 
-  Future<Response<T>> put<T>(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
-    return dio.put<T>(path, data: data, queryParameters: queryParameters, options: options);
+  Future<Response<T>> put<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return dio.put<T>(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
   }
 
-  Future<Response<T>> delete<T>(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
-    return dio.delete<T>(path, data: data, queryParameters: queryParameters, options: options);
+  Future<Response<T>> delete<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return dio.delete<T>(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
   }
 }

@@ -17,10 +17,8 @@ class RecommendationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return Container(
-      margin: EdgeInsets.all(screenWidth * 0.02),
+      margin: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
@@ -31,7 +29,7 @@ class RecommendationCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             color: const Color(0xFFFFFFFF).withValues(alpha: 0.05),
             child: Column(
@@ -47,12 +45,15 @@ class RecommendationCard extends StatelessWidget {
                     return Container(
                       height: imageHeight,
                       color: Colors.grey[900],
-                      child: const Icon(Icons.broken_image, color: Colors.white24),
+                      child: const Icon(
+                        Icons.broken_image,
+                        color: Colors.white24,
+                      ),
                     );
                   },
                 ),
                 Padding(
-                  padding: EdgeInsets.all(screenWidth * 0.03),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -60,22 +61,22 @@ class RecommendationCard extends StatelessWidget {
                         title,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: screenWidth * 0.038,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: screenWidth * 0.015),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           Icon(
                             Icons.account_circle_outlined,
-                            size: screenWidth * 0.035,
+                            size: 16,
                             color: const Color(0xFF00C6FF),
                           ),
-                          SizedBox(width: screenWidth * 0.01),
+                          const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               userId,

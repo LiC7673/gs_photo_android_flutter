@@ -19,10 +19,8 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return Container(
-      margin: EdgeInsets.symmetric(vertical: screenWidth * 0.025),
+      margin: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
@@ -32,17 +30,17 @@ class TaskCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
-            padding: EdgeInsets.all(screenWidth * 0.04), // 稍微减小内边距以节省空间
+            padding: const EdgeInsets.all(16),
             color: const Color(0xFF03081C).withValues(alpha: 0.6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,11 +49,11 @@ class TaskCard extends StatelessWidget {
                   '任务进行中',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: screenWidth * 0.04, // 稍微减小字号
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: screenWidth * 0.035),
+                const SizedBox(height: 12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -64,12 +62,12 @@ class TaskCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       child: Image.network(
                         imageUrl,
-                        width: screenWidth * 0.18, // 响应式宽度
-                        height: screenWidth * 0.18, // 保持正方形
+                        width: 72,
+                        height: 72,
                         fit: BoxFit.cover,
                       ),
                     ),
-                    SizedBox(width: screenWidth * 0.04),
+                    const SizedBox(width: 16),
                     // 右侧内容
                     Expanded(
                       child: Column(
@@ -79,24 +77,24 @@ class TaskCard extends StatelessWidget {
                             title,
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: screenWidth * 0.04,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: screenWidth * 0.015),
+                          const SizedBox(height: 8),
                           Text(
                             '$statusText ${(progress * 100).toInt()}%',
                             style: TextStyle(
                               color: const Color(0xFF00C6FF),
-                              fontSize: screenWidth * 0.035,
+                              fontSize: 14,
                             ),
                           ),
-                          SizedBox(height: screenWidth * 0.025),
+                          const SizedBox(height: 8),
                           // 进度条
                           Container(
-                            height: screenWidth * 0.01, // 减细一点更精致
+                            height: 4,
                             width: double.infinity,
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.1),
@@ -109,26 +107,29 @@ class TaskCard extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(2),
                                   gradient: const LinearGradient(
-                                    colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
+                                    colors: [
+                                      Color(0xFF00C6FF),
+                                      Color(0xFF0072FF),
+                                    ],
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                          SizedBox(height: screenWidth * 0.02),
+                          const SizedBox(height: 8),
                           Text(
                             '预计剩余 $timeRemaining',
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.5),
-                              fontSize: screenWidth * 0.03,
+                              fontSize: 12,
                             ),
                           ),
                         ],
                       ),
                     ),
                     // 右侧装饰图
-                    SizedBox(width: screenWidth * 0.02),
-                    _buildDecorativeRadar(screenWidth),
+                    const SizedBox(width: 8),
+                    _buildDecorativeRadar(),
                   ],
                 ),
               ],
@@ -139,23 +140,30 @@ class TaskCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDecorativeRadar(double screenWidth) {
-    final radarSize = screenWidth * 0.12;
+  Widget _buildDecorativeRadar() {
+    const radarSize = 48.0;
     return Container(
       width: radarSize,
       height: radarSize,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFF00C6FF).withValues(alpha: 0.2), width: 1),
+        border: Border.all(
+          color: const Color(0xFF00C6FF).withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Icon(Icons.radar, color: const Color(0xFF00C6FF).withValues(alpha: 0.5), size: radarSize * 0.5),
+          Icon(
+            Icons.radar,
+            color: const Color(0xFF00C6FF).withValues(alpha: 0.5),
+            size: 24,
+          ),
           Transform.rotate(
             angle: 0.5,
             child: Container(
-              width: radarSize * 0.8,
+              width: 40,
               height: 1,
               color: const Color(0xFF00C6FF).withValues(alpha: 0.3),
             ),
@@ -165,4 +173,3 @@ class TaskCard extends StatelessWidget {
     );
   }
 }
-
