@@ -8,6 +8,7 @@ import '../../features/camera/camera_guide_screen.dart';
 import '../../features/creation/creation_page.dart';
 import '../../features/main_page/main_page.dart';
 import '../../features/render/local_viewer_page.dart';
+import '../../features/render/mesh_preview_page.dart';
 import '../../features/render/preview_webview_screen.dart';
 import '../../features/task_page/task_page.dart';
 import '../../features/task_page/task_detail_page.dart';
@@ -15,7 +16,7 @@ import '../../features/recommendation_page/recommendation_page.dart';
 import '../../features/profile/profile_page.dart';
 
 class RouteAdapter {
-  static const Color _routeBackgroundColor = Color(0xFF03081C);
+  static const Color _routeBackgroundColor = Colors.transparent;
 
   static Widget _withRouteBackground(Widget child) {
     return ColoredBox(color: _routeBackgroundColor, child: child);
@@ -42,12 +43,13 @@ class RouteAdapter {
       redirect: (context, state) {
         final isLoggedIn = UserState.instance.isLoggedIn;
         final isLoggingIn = state.uri.path == loginPath;
+        final isRegistering = state.uri.path == registerPath;
 
-        if (!isLoggedIn && !isLoggingIn) {
+        if (!isLoggedIn && !isLoggingIn && !isRegistering) {
           return loginPath;
         }
 
-        if (isLoggedIn && isLoggingIn) {
+        if (isLoggedIn && (isLoggingIn || isRegistering)) {
           return homeTabPath;
         }
 
@@ -60,8 +62,23 @@ class RouteAdapter {
         // 二级页面：放在 Shell 外，像独立 Activity，不显示底部导航
         GoRoute(
           path: '$homeTabPath/$cameraGuidePath',
-          builder: (context, state) =>
-              _withRouteBackground(const CameraGuideScreen()),
+          builder: (context, state) {
+            final extra = state.extra;
+            return _withRouteBackground(
+              CameraGuideScreen(args: extra is CameraGuideArgs ? extra : null),
+            );
+          },
+        ),
+        GoRoute(
+          path: '$homeTabPath/$videoCameraGuidePath',
+          builder: (context, state) {
+            final extra = state.extra;
+            return _withRouteBackground(
+              VideoCameraGuideScreen(
+                args: extra is CameraGuideArgs ? extra : null,
+              ),
+            );
+          },
         ),
         GoRoute(
           path: '$homeTabPath/$creationConfigPath',
@@ -81,8 +98,11 @@ class RouteAdapter {
           path: '$homeTabPath/$localViewerPath',
           builder: (context, state) {
             final extra = state.extra;
+            final modelPath = extra is String ? extra : null;
             return _withRouteBackground(
-              SparkLocalViewerPage(modelPath: extra is String ? extra : null),
+              MeshPreviewPage.supportsPath(modelPath)
+                  ? MeshPreviewPage(modelPath: modelPath)
+                  : SparkLocalViewerPage(modelPath: modelPath),
             );
           },
         ),
@@ -92,6 +112,7 @@ class RouteAdapter {
             TaskDetailPage(
               taskId: state.pathParameters['taskId'] ?? '',
               initialImages: (state.extra as Map?)?['images'] as List<XFile>?,
+              initialVideos: (state.extra as Map?)?['videos'] as List<String>?,
             ),
           ),
         ),

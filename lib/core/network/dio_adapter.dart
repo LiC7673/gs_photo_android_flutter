@@ -21,7 +21,7 @@ class DioAdapter {
       InterceptorsWrapper(
         onRequest: (options, handler) {
           final token = UserState.instance.token;
-          if (token != null) {
+          if (token != null && !options.headers.containsKey('Authorization')) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           debugPrint('[API] trigger ${options.method} ${options.uri}');
@@ -84,6 +84,20 @@ class DioAdapter {
     Options? options,
   }) async {
     return dio.put<T>(
+      _normalizePath(path),
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
+  }
+
+  Future<Response<T>> patch<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return dio.patch<T>(
       _normalizePath(path),
       data: data,
       queryParameters: queryParameters,

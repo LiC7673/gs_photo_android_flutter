@@ -2,10 +2,13 @@ import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/material.dart';
 
+import '../../state/language_state.dart';
+
 class TaskItem extends StatelessWidget {
   final String title;
   final String creationTime;
   final String status;
+  final String? visibility;
   final IconData statusIcon;
   final Color statusColor;
   final String? thumbnailUrl;
@@ -18,6 +21,7 @@ class TaskItem extends StatelessWidget {
     required this.title,
     required this.creationTime,
     required this.status,
+    this.visibility,
     this.statusIcon = Icons.info_outline,
     this.statusColor = const Color(0xFF00FFC2),
     this.thumbnailUrl,
@@ -142,6 +146,10 @@ class TaskItem extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (visibility != null) ...[
+                        const SizedBox(height: 8),
+                        _buildVisibilityChip(context),
+                      ],
                     ],
                   ),
                 ),
@@ -150,7 +158,7 @@ class TaskItem extends StatelessWidget {
                 Column(
                   children: [
                     _buildActionButton(
-                      label: '查看',
+                      label: context.tr('task.action.view'),
                       onPressed: onView,
                       gradient: const LinearGradient(
                         colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
@@ -158,7 +166,7 @@ class TaskItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     _buildActionButton(
-                      label: '删除',
+                      label: context.tr('common.delete'),
                       onPressed: onDelete,
                       gradient: const LinearGradient(
                         colors: [Color(0xFFFF4B2B), Color(0xFFFF416C)],
@@ -207,6 +215,43 @@ class TaskItem extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildVisibilityChip(BuildContext context) {
+    final isPublic = visibility == 'public';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: (isPublic ? const Color(0xFF00C6FF) : Colors.white)
+            .withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: (isPublic ? const Color(0xFF00C6FF) : Colors.white)
+              .withValues(alpha: 0.18),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isPublic ? Icons.public : Icons.lock_outline,
+            size: 12,
+            color: isPublic ? const Color(0xFF00C6FF) : Colors.white60,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            context.tr(
+              isPublic ? 'task.visibility.public' : 'task.visibility.private',
+            ),
+            style: TextStyle(
+              color: isPublic ? const Color(0xFF00C6FF) : Colors.white60,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

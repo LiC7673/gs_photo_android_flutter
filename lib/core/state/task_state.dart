@@ -89,9 +89,11 @@ class ProcessingTask {
   final TaskStatus status;
   final double progress;
   final String? stage;
+  final String visibility;
   final DateTime createdAt;
   final DateTime? updatedAt;
   final StorageFile? resultPly;
+  final StorageFile? resultMesh;
 
   ProcessingTask({
     required this.taskId,
@@ -101,9 +103,11 @@ class ProcessingTask {
     required this.status,
     this.progress = 0,
     this.stage,
+    this.visibility = 'private',
     required this.createdAt,
     this.updatedAt,
     this.resultPly,
+    this.resultMesh,
   });
 
   ProcessingTask copyWith({
@@ -113,9 +117,11 @@ class ProcessingTask {
     TaskStatus? status,
     double? progress,
     String? stage,
+    String? visibility,
     List<StorageFile>? files,
     DateTime? updatedAt,
     StorageFile? resultPly,
+    StorageFile? resultMesh,
   }) {
     return ProcessingTask(
       taskId: taskId ?? this.taskId,
@@ -125,9 +131,11 @@ class ProcessingTask {
       status: status ?? this.status,
       progress: progress ?? this.progress,
       stage: stage ?? this.stage,
+      visibility: visibility ?? this.visibility,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       resultPly: resultPly ?? this.resultPly,
+      resultMesh: resultMesh ?? this.resultMesh,
     );
   }
 
@@ -140,9 +148,11 @@ class ProcessingTask {
       'status': status.name,
       'progress': progress,
       'stage': stage,
+      'visibility': visibility,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'result_ply': resultPly?.toJson(),
+      'result_mesh': resultMesh?.toJson(),
     };
   }
 
@@ -162,6 +172,7 @@ class ProcessingTask {
       ),
       progress: (json['progress'] as num?)?.toDouble() ?? 0,
       stage: json['stage'] as String?,
+      visibility: json['visibility'] as String? ?? 'private',
       createdAt:
           DateTime.tryParse(json['created_at'] as String? ?? '') ??
           DateTime.now(),
@@ -169,6 +180,11 @@ class ProcessingTask {
       resultPly: json['result_ply'] is Map
           ? StorageFile.fromJson(
               Map<String, dynamic>.from(json['result_ply'] as Map),
+            )
+          : null,
+      resultMesh: json['result_mesh'] is Map
+          ? StorageFile.fromJson(
+              Map<String, dynamic>.from(json['result_mesh'] as Map),
             )
           : null,
     );
@@ -296,6 +312,14 @@ class TaskState extends ChangeNotifier {
   void removeTask(String taskId) {
     _tasks.remove(taskId);
     _persistTasks();
+    notifyListeners();
+  }
+
+  Future<void> clearTasks() async {
+    debugPrint('[TaskState] clear tasks count=${_tasks.length}');
+    _tasks.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tasksKey);
     notifyListeners();
   }
 

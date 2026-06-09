@@ -8,8 +8,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/network/reconstruction_models.dart';
 import '../../core/network/reconstruction_service.dart';
-import '../../core/network/upload_service.dart';
 import '../../core/router/route_config.dart';
+import '../../core/state/language_state.dart';
 import '../../core/state/task_state.dart';
 import '../../core/widgets/background/sci_fi_background.dart';
 import '../../core/widgets/buttons/gradient_button.dart';
@@ -33,7 +33,6 @@ class ReconstructionUploadPage extends StatefulWidget {
 
 class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
   final ReconstructionService _reconstructionService = ReconstructionService();
-  final UploadService _uploadService = UploadService();
   final ImagePicker _picker = ImagePicker();
 
   List<XFile> _selectedImages = [];
@@ -106,16 +105,35 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
 
     var activeTaskId = localTaskId;
     try {
-      final createdTask = await _reconstructionService.createTask(
-        ReconstructionCreateTaskRequest(
-          title: taskName,
-          params: params,
-          algorithm: algorithm,
-        ),
-      );
-      final serverTaskId = createdTask?.taskId;
+      _safeSetState(() {
+        _currentStatus = 'uploading';
+        _progress = 0.05;
+      });
 
-      if (serverTaskId == null || serverTaskId.isEmpty) {
+      final started = await _reconstructionService.startWithLocalFiles(
+        filePaths: _selectedImages.map((image) => image.path).toList(),
+        params: params,
+        algorithm: algorithm,
+        onSendProgress: (sent, total) {
+          if (total <= 0) return;
+          final progress = (sent / total).clamp(0.0, 1.0).toDouble();
+          _safeSetState(
+            () => _progress = (progress * 0.85).clamp(0.05, 0.85).toDouble(),
+          );
+        },
+      );
+
+      if (started == null) {
+        taskState.updateTaskStatus(localTaskId, TaskStatus.failed);
+        _safeSetState(() => _currentStatus = 'failed');
+        debugPrint(
+          '[API] result button=start_reconstruction failed reason=submit_task',
+        );
+        return;
+      }
+
+      final serverTaskId = started.taskId;
+      if (serverTaskId.isEmpty) {
         taskState.updateTaskStatus(localTaskId, TaskStatus.failed);
         _safeSetState(() => _currentStatus = 'failed');
         debugPrint(
@@ -129,95 +147,22 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
         initialTask.copyWith(
           taskId: serverTaskId,
           params: {...params, 'server_task_id': serverTaskId},
-          status: TaskStatus.uploadingFiles,
+          files: _selectedImages
+              .map(
+                (image) => _storageFileFromImage(
+                  image,
+                ).copyWith(status: FileSyncStatus.synced),
+              )
+              .toList(),
+          status: TaskStatus.processing,
           updatedAt: DateTime.now(),
         ),
       );
       activeTaskId = serverTaskId;
 
-      _safeSetState(() {
-        _taskId = serverTaskId;
-        _currentStatus = 'uploading';
-        _progress = 0.05;
-      });
-
-      final uploadedFiles = <StorageFile>[];
-      final imageIds = <String>[];
-      for (var index = 0; index < _selectedImages.length; index++) {
-        final image = _selectedImages[index];
-        final result = await _uploadService.uploadFile(
-          image.path,
-          onProgress: (fileProgress) {
-            final progress = (index + fileProgress) / _selectedImages.length;
-            _safeSetState(() => _progress = (progress * 0.8).clamp(0.05, 0.85));
-          },
-        );
-        imageIds.add(result.fileId);
-        uploadedFiles.add(
-          _storageFileFromImage(image).copyWith(
-            fileId: result.fileId,
-            remoteUrl: result.storageKey,
-            status: FileSyncStatus.synced,
-            md5: result.fileHash,
-          ),
-        );
-        taskState.upsertTask(
-          initialTask.copyWith(
-            taskId: serverTaskId,
-            params: {
-              ...params,
-              'server_task_id': serverTaskId,
-              'image_ids': imageIds,
-            },
-            files: [
-              ...uploadedFiles,
-              ..._selectedImages.skip(index + 1).map(_storageFileFromImage),
-            ],
-            status: TaskStatus.uploadingFiles,
-            updatedAt: DateTime.now(),
-          ),
-        );
-      }
-
-      taskState.upsertTask(
-        initialTask.copyWith(
-          taskId: serverTaskId,
-          params: {
-            ...params,
-            'server_task_id': serverTaskId,
-            'image_ids': imageIds,
-          },
-          files: uploadedFiles,
-          status: TaskStatus.pending,
-          updatedAt: DateTime.now(),
-        ),
-      );
-
-      _safeSetState(() {
-        _currentStatus = 'submitting';
-        _progress = 0.9;
-      });
-
-      final started = await _reconstructionService.startWithUploadedImages(
-        taskId: serverTaskId,
-        request: ReconstructionStartUploadedRequest(
-          imageFileIds: imageIds,
-          params: params,
-          algorithm: algorithm,
-        ),
-      );
-
-      if (started == null) {
-        taskState.updateTaskStatus(serverTaskId, TaskStatus.failed);
-        _safeSetState(() => _currentStatus = 'failed');
-        debugPrint(
-          '[API] result button=start_reconstruction failed reason=submit_task',
-        );
-        return;
-      }
-
       taskState.updateTaskStatus(serverTaskId, TaskStatus.processing);
       _safeSetState(() {
+        _taskId = serverTaskId;
         _currentStatus = 'processing';
         _progress = 0.95;
       });
@@ -240,26 +185,30 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
       final statusData = await _reconstructionService.checkStatus(taskId);
       if (statusData == null) return;
 
+      _logTaskStatus('reconstruction_poll', statusData);
+
       final serverStatus = statusData.status;
       final taskStatus = _mapServerStatus(serverStatus);
       final progress = _normalizeProgress(statusData.progress);
 
-      taskState.updateTaskStatus(taskId, taskStatus);
-      debugPrint(
-        '[API] result reconstruction_poll taskId=$taskId status=$serverStatus',
+      taskState.updateTaskProgress(
+        taskId,
+        progress ?? _progress,
+        status: taskStatus,
+        stage: statusData.currentStage,
       );
-
       if (taskStatus == TaskStatus.completed) {
         timer.cancel();
         _safeSetState(() {
           _currentStatus = 'downloading';
-          _progress = 0.98;
+          _progress = (_progress).clamp(0.0, 0.98);
         });
         _downloadAndPreview(taskId, statusData);
         return;
       }
 
       if (taskStatus == TaskStatus.failed) {
+        _logTaskStatus('reconstruction_failed', statusData);
         timer.cancel();
         _safeSetState(() => _currentStatus = 'failed');
         return;
@@ -268,7 +217,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
       _safeSetState(() {
         _currentStatus = 'processing';
         if (progress != null) {
-          _progress = progress.clamp(0.05, 0.95);
+          _progress = progress.clamp(0.0, 1.0);
         } else if (_progress < 0.9) {
           _progress += 0.05;
         }
@@ -283,16 +232,22 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
     debugPrint('[API] result reconstruction_completed taskId=$taskId');
     final resultFileId = statusData.resultFileId;
     if (resultFileId == null || resultFileId.isEmpty) {
+      _logTaskStatus('reconstruction_completed_without_result_file', statusData);
       debugPrint(
         '[API] result downloadResultFile failed reason=no_result_file_id '
         'taskId=$taskId',
       );
       if (!mounted) return;
-      context.read<TaskState>().updateTaskStatus(taskId, TaskStatus.failed);
-      _safeSetState(() => _currentStatus = 'failed');
+      context.read<TaskState>().updateTaskStatus(taskId, TaskStatus.completed);
+      _safeSetState(() {
+        _currentStatus = 'completed';
+        _progress = 1.0;
+      });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('重建完成，但没有返回结果文件 ID')));
+      ).showSnackBar(
+        SnackBar(content: Text(context.tr('upload.result.noFile'))),
+      );
       return;
     }
 
@@ -309,11 +264,17 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
     if (!mounted) return;
 
     if (file == null) {
-      context.read<TaskState>().updateTaskStatus(taskId, TaskStatus.failed);
-      _safeSetState(() => _currentStatus = 'failed');
+      _logTaskStatus('reconstruction_download_failed_after_completed', statusData);
+      context.read<TaskState>().updateTaskStatus(taskId, TaskStatus.completed);
+      _safeSetState(() {
+        _currentStatus = 'completed';
+        _progress = 1.0;
+      });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('重建完成，但结果下载失败')));
+      ).showSnackBar(
+        SnackBar(content: Text(context.tr('upload.result.downloadFailed'))),
+      );
       return;
     }
 
@@ -345,8 +306,24 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
     });
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('重建完成，正在打开渲染器')));
+    ).showSnackBar(SnackBar(content: Text(context.tr('upload.result.opening'))));
     context.push('$homeTabPath/$localViewerPath', extra: file.path);
+  }
+
+  void _logTaskStatus(String tag, ReconstructionStatusResponse statusData) {
+    final resultFiles = statusData.resultFiles
+        .map(
+          (file) =>
+              '${file.fileId}:${file.filename}:${file.fileType}:${file.category}',
+        )
+        .toList();
+    debugPrint(
+      '[API] result $tag taskId=${statusData.taskId} '
+      'status=${statusData.status} progress=${statusData.progress} '
+      'stage=${statusData.currentStage} resultFileId=${statusData.resultFileId} '
+      'errorCode=${statusData.errorCode} error=${statusData.error} '
+      'resultFiles=$resultFiles',
+    );
   }
 
   void _safeSetState(VoidCallback fn) {
@@ -357,21 +334,14 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
   String get _taskName {
     final name = widget.taskName?.trim();
     if (name != null && name.isNotEmpty) return name;
-    return '未命名任务';
+    return context.tr('home.task.untitled');
   }
 
   Map<String, dynamic> _buildReconstructionParams() {
     final raw = Map<String, dynamic>.from(widget.params ?? const {});
     raw.remove('images');
     raw['task_name'] = _taskName;
-    raw['image_count'] = _selectedImages.length;
-    raw['type'] = raw['type'] ?? 'object';
-    raw['resolution'] = raw['resolution'] ?? 0.5;
     raw['algorithm'] = _normalizeAlgorithm(raw['algorithm']?.toString());
-    raw['cuda_device'] = raw['cuda_device'] ?? '1';
-    raw['python_path'] =
-        raw['python_path'] ?? '/data1/lzh/anaconda3/envs/anysplat/bin/python';
-    raw['algorithm_path'] = raw['algorithm_path'] ?? '/data1/lzh/lzy/AnySplat';
     return raw;
   }
 
@@ -379,6 +349,14 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
     switch ((value ?? '').trim().toLowerCase()) {
       case 'anysplat':
         return 'anysplat';
+      case 'dash_gaussian':
+      case 'dash gaussian':
+      case 'dash-gaussian':
+        return 'dash_gaussian';
+      case 'hunyuan3d':
+      case 'hunyuan 3d':
+      case 'hunyuan-3d':
+        return 'hunyuan3d';
       case 'segment_then_splat':
       case 'segment then splat':
       case 'segment-then-splat':
@@ -441,6 +419,7 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
   TaskStatus _mapServerStatus(String status) {
     switch (status.toLowerCase()) {
       case 'completed':
+      case 'partial_completed':
         return TaskStatus.completed;
       case 'failed':
       case 'cancelled':
@@ -464,15 +443,19 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LanguageState>();
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('启动 3DGS 重建', style: TextStyle(color: Colors.white)),
+        title: Text(
+          context.tr('upload.title'),
+          style: const TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => context.pop(),
+          onPressed: () => context.go(homeTabPath),
         ),
       ),
       body: SciFiBackground(
@@ -494,19 +477,22 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
                     const SizedBox(height: 20),
                     Text(
                       _selectedImages.isEmpty
-                          ? '请选择需要重建的图片'
-                          : '已选择 ${_selectedImages.length} 张图片',
+                          ? context.tr('upload.pickPrompt')
+                          : context.tr(
+                              'upload.selectedImages',
+                              args: {'count': _selectedImages.length},
+                            ),
                       style: const TextStyle(color: Colors.white, fontSize: 16),
                     ),
                     const SizedBox(height: 40),
                     ElevatedButton(
                       onPressed: _pickImages,
-                      child: const Text('从相册选择图片'),
+                      child: Text(context.tr('upload.pickImages')),
                     ),
                     const SizedBox(height: 20),
                     if (_selectedImages.isNotEmpty)
                       GradientButton(
-                        label: '开始上传并重建',
+                        label: context.tr('upload.start'),
                         onPressed: _startProcess,
                         height: 56,
                       ),
@@ -529,32 +515,32 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
 
     switch (_currentStatus) {
       case 'creating':
-        message = '正在创建重建任务...';
+        message = context.tr('upload.stage.creating');
         icon = Icons.add_task;
         break;
       case 'uploading':
-        message = '正在上传图片素材...';
+        message = context.tr('upload.stage.uploading');
         icon = Icons.cloud_upload;
         break;
       case 'submitting':
-        message = '正在提交图片到重建任务...';
+        message = context.tr('upload.stage.submitting');
         icon = Icons.send;
         break;
       case 'processing':
-        message = '算法正在重建 3D 点云...';
+        message = context.tr('upload.stage.processing');
         icon = Icons.memory;
         break;
       case 'downloading':
-        message = '正在下载重建结果...';
+        message = context.tr('upload.stage.downloading');
         icon = Icons.download;
         break;
       case 'completed':
-        message = '重建成功';
+        message = context.tr('upload.stage.completed');
         icon = Icons.check_circle;
         color = Colors.green;
         break;
       case 'failed':
-        message = '处理失败，请重试';
+        message = context.tr('upload.stage.failed');
         icon = Icons.error;
         color = Colors.red;
         break;
@@ -588,14 +574,17 @@ class _ReconstructionUploadPageState extends State<ReconstructionUploadPage> {
         if (_taskId != null) ...[
           const SizedBox(height: 12),
           Text(
-            '任务 ID: $_taskId',
+            context.tr('upload.taskId', args: {'id': _taskId}),
             style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
         if (_currentStatus == 'failed')
           TextButton(
             onPressed: () => setState(() => _currentStatus = 'ready'),
-            child: const Text('返回重试', style: TextStyle(color: Colors.white70)),
+            child: Text(
+              context.tr('common.retry'),
+              style: const TextStyle(color: Colors.white70),
+            ),
           ),
       ],
     );

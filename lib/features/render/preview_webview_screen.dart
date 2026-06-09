@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../core/config/app_config.dart';
-
+import '../../core/config/api_config.dart';
+import '../../core/state/language_state.dart';
 class PreviewWebViewScreen extends StatefulWidget {
   final String? modelUrl;
 
@@ -20,7 +22,7 @@ class _PreviewWebViewScreenState extends State<PreviewWebViewScreen> {
     super.initState();
 
     final String modelPath =
-        widget.modelUrl ?? '${AppConfig.baseUrl}${AppConfig.previewPath}';
+        widget.modelUrl ?? '${ApiPaths.baseUrl}${AppConfig.previewPath}';
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -41,9 +43,10 @@ class _PreviewWebViewScreenState extends State<PreviewWebViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LanguageState>();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('3DGS Web 预览'),
+        title: Text(context.tr('viewer.web.title')),
         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       ),
       body: Stack(

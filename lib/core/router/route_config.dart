@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/login/login_screen.dart';
+import '../../features/login/register_screen.dart';
 import '../../features/camera/camera_guide_screen.dart';
 import '../../features/creation/creation_page.dart';
 import '../../features/render/preview_webview_screen.dart';
 import '../../features/render/local_viewer_page.dart';
+import '../../features/render/mesh_preview_page.dart';
 
 /// 1. 定义路由节点模型
 class AppRouteNode {
@@ -22,6 +24,7 @@ class AppRouteNode {
 /// 2. 常量定义
 const String rootPath = '/';
 const String loginPath = '/login';
+const String registerPath = '/register';
 const String mainPath = '/main';
 
 // Tab 路径
@@ -33,6 +36,7 @@ const String profileTabPath = '/profile';
 
 // 功能页面路径 (相对于其父路径)
 const String cameraGuidePath = 'camera_guide';
+const String videoCameraGuidePath = 'video_camera_guide';
 const String creationConfigPath = 'creation_config';
 const String uploadProgressPath = 'upload_progress';
 const String previewPath = 'preview';
@@ -47,6 +51,10 @@ final List<AppRouteNode> appRouteTree = [
     path: '/login',
     builder: (context, state) => const LoginScreen(),
   ),
+  AppRouteNode(
+    path: '/register',
+    builder: (context, state) => const RegisterScreen(),
+  ),
 ];
 
 /// 4. 功能子路由 (通常挂载在 Main 之下，或者根据需要平级)
@@ -54,7 +62,19 @@ final List<AppRouteNode> featureRoutes = [
   // 相机引导
   AppRouteNode(
     path: cameraGuidePath,
-    builder: (context, state) => const CameraGuideScreen(),
+    builder: (context, state) {
+      final extra = state.extra;
+      return CameraGuideScreen(args: extra is CameraGuideArgs ? extra : null);
+    },
+  ),
+  AppRouteNode(
+    path: videoCameraGuidePath,
+    builder: (context, state) {
+      final extra = state.extra;
+      return VideoCameraGuideScreen(
+        args: extra is CameraGuideArgs ? extra : null,
+      );
+    },
   ),
   // 物体创建配置
   AppRouteNode(
@@ -74,7 +94,10 @@ final List<AppRouteNode> featureRoutes = [
     path: localViewerPath,
     builder: (context, state) {
       final extra = state.extra;
-      return SparkLocalViewerPage(modelPath: extra is String ? extra : null);
+      final modelPath = extra is String ? extra : null;
+      return MeshPreviewPage.supportsPath(modelPath)
+          ? MeshPreviewPage(modelPath: modelPath)
+          : SparkLocalViewerPage(modelPath: modelPath);
     },
   ),
 ];

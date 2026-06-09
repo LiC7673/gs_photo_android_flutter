@@ -17,10 +17,11 @@ class UploadService {
       case 'mp4':
       case 'mov':
         return 'video/$extension';
-      case 'jpg':
       case 'jpeg':
+      case 'jpg':
+        return 'image/jpeg';
       case 'png':
-        return 'image/$extension';
+        return 'image/png';
       case 'ply':
         return 'model/$extension';
       case 'zip':
@@ -37,18 +38,16 @@ class UploadService {
     return digest.toString();
   }
 
-  Future<String> _calculateMd5Hash(File file) async {
-    final digest = await md5.bind(file.openRead()).first;
-    return digest.toString();
-  }
-
   /// 初始化上传
-  Future<UploadInitResponse> initializeUpload(String filePath) async {
+  Future<UploadInitResponse> initializeUpload(
+    String filePath, {
+    String? fileHash,
+  }) async {
     final file = File(filePath);
     final fileName = p.basename(filePath);
     final fileSize = await file.length();
     debugPrint('[API] trigger initializeUpload file=$fileName size=$fileSize');
-    final fileHash = await _calculateFileHash(file);
+    final resolvedFileHash = fileHash ?? await _calculateFileHash(file);
     final mimeType = _getMimeType(filePath);
 
     final request = UploadInitRequest(
@@ -56,7 +55,7 @@ class UploadService {
       fileSize: fileSize,
       chunkSize: UploadFileConfig.defaultChunkSize,
       mimeType: mimeType,
-      fileHash: fileHash,
+      fileHash: resolvedFileHash,
     );
 
     final response = await _dioAdapter.post(
@@ -75,10 +74,30 @@ class UploadService {
     // debugPrint('➡️ [Reponse]: ${jsonEncode(response.data)}');
     // debugPrint('========================================');
     // // debugPrint()
-    final result = UploadInitResponse.fromJson(response.data);
+    final parsed = UploadInitResponse.fromJson(_readObject(response.data));
+    final normalizedChunkSize = parsed.chunkSize > 0
+        ? parsed.chunkSize
+        : UploadFileConfig.defaultChunkSize;
+    final normalizedTotalChunks = parsed.totalChunks > 0
+        ? parsed.totalChunks
+        : (fileSize / normalizedChunkSize).ceil();
+    final result = UploadInitResponse(
+      uploadId: parsed.uploadId,
+      chunkSize: normalizedChunkSize,
+      totalChunks: normalizedTotalChunks,
+      expiresAt: parsed.expiresAt,
+      alreadyUploaded: parsed.alreadyUploaded,
+      fileId: parsed.fileId,
+      imageId: parsed.imageId,
+      fileHash: parsed.fileHash,
+      storageKey: parsed.storageKey,
+    );
+    if (result.uploadId.isEmpty && !result.alreadyUploaded) {
+      throw StateError('Invalid upload init response: ${response.data}');
+    }
     debugPrint(
       '[API] result initializeUpload uploadId=${result.uploadId} '
-      'chunks=${result.totalChunks}',
+      'chunks=${result.totalChunks} alreadyUploaded=${result.alreadyUploaded}',
     );
     return result;
   }
@@ -103,7 +122,7 @@ class UploadService {
       ),
     );
 
-    final result = ChunkResponse.fromJson(response.data);
+    final result = ChunkResponse.fromJson(_readObject(response.data));
     debugPrint(
       '[API] result uploadChunk uploadId=$uploadId '
       'chunkIndex=$chunkIndex etag=${result.etag}',
@@ -117,7 +136,7 @@ class UploadService {
     final response = await _dioAdapter.get(
       UploadFileConfig.getUploadProgressUrl(uploadId),
     );
-    final result = UploadProgressResponse.fromJson(response.data);
+    final result = UploadProgressResponse.fromJson(_readObject(response.data));
     debugPrint('[API] result checkUploadProgress uploadId=$uploadId');
     return result;
   }
@@ -143,7 +162,10 @@ class UploadService {
       data: request.toJson(),
     );
 
-    final result = MergeResponse.fromJson(response.data);
+    final result = MergeResponse.fromJson(_readObject(response.data));
+    if (result.fileId.isEmpty) {
+      throw StateError('Invalid upload merge response: ${response.data}');
+    }
     debugPrint(
       '[API] result mergeChunks uploadId=$uploadId '
       'fileId=${result.fileId} verified=${result.verified}',
@@ -152,10 +174,10 @@ class UploadService {
   }
 
   /// 取消上传
-  Future<void> cancelUpload(String fileId) async {
-    debugPrint('[API] trigger cancelUpload fileId=$fileId');
-    await _dioAdapter.post(UploadFileConfig.getUploadCancelUrl(fileId));
-    debugPrint('[API] result cancelUpload fileId=$fileId');
+  Future<void> cancelUpload(String uploadId) async {
+    debugPrint('[API] trigger cancelUpload uploadId=$uploadId');
+    await _dioAdapter.post(UploadFileConfig.getUploadCancelUrl(uploadId));
+    debugPrint('[API] result cancelUpload uploadId=$uploadId');
   }
 
   /// 高层封装：完整上传文件流程
@@ -170,7 +192,30 @@ class UploadService {
     );
 
     // 1. 初始化
-    final initData = await initializeUpload(filePath);
+    final fileHash = await _calculateFileHash(file);
+    final initData = await initializeUpload(filePath, fileHash: fileHash);
+    if (initData.alreadyUploaded) {
+      final fileId = initData.fileId.isNotEmpty
+          ? initData.fileId
+          : initData.imageId;
+      if (fileId.isEmpty) {
+        throw StateError(
+          'Invalid already uploaded response: ${initData.toJson()}',
+        );
+      }
+      onProgress?.call(1);
+      debugPrint(
+        '[API] result uploadFile reused file=${p.basename(filePath)} '
+        'fileId=$fileId',
+      );
+      return MergeResponse(
+        fileId: fileId,
+        fileHash: initData.fileHash,
+        storageKey: initData.storageKey,
+        verified: true,
+      );
+    }
+
     final uploadId = initData.uploadId;
     final chunkSize = initData.chunkSize;
     final totalChunks = initData.totalChunks;
@@ -204,7 +249,6 @@ class UploadService {
     }
 
     // 3. 合并
-    final fileHash = await _calculateMd5Hash(file); // 后端合并请求需要的是 MD5
     final result = await mergeChunks(
       uploadId: uploadId,
       expectedSize: fileSize,
@@ -216,5 +260,15 @@ class UploadService {
       'storageKey=${result.storageKey}',
     );
     return result;
+  }
+
+  Map<String, dynamic> _readObject(Object? data) {
+    if (data is! Map) return const <String, dynamic>{};
+    final map = Map<String, dynamic>.from(data);
+    for (final key in const ['data', 'file', 'upload', 'result']) {
+      final nested = map[key];
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+    }
+    return map;
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +7,8 @@ import 'core/widgets/bar/custom_nav_bar.dart';
 import 'core/widgets/background/sci_fi_background.dart';
 import 'core/router/route_adapter.dart';
 import 'core/network/auth_service.dart';
+import 'core/services/session_prefetch_service.dart';
+import 'core/state/language_state.dart';
 import 'core/state/task_state.dart';
 import 'core/state/user_state.dart';
 import 'package:go_router/go_router.dart';
@@ -21,11 +25,13 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
+  await LanguageState.instance.initialize();
   await UserState.instance.restoreSession();
   if (UserState.instance.token != null) {
     try {
       final user = await AuthService().fetchCurrentUser();
       await UserState.instance.updateUser(user);
+      unawaited(SessionPrefetchService.instance.start(refreshUser: false));
     } catch (e) {
       debugPrint('[API] result startup_auth_check failed error=$e');
       await UserState.instance.logout();
@@ -35,6 +41,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: UserState.instance),
+        ChangeNotifierProvider.value(value: LanguageState.instance),
         ChangeNotifierProvider(create: (_) => TaskState()),
       ],
       child: const MyApp(),
@@ -47,8 +54,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LanguageState>();
     return MaterialApp.router(
-      title: 'GS App',
+      title: context.tr('app.title'),
       routerConfig: RouteAdapter.createRouter(),
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,

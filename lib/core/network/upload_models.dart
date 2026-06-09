@@ -27,22 +27,37 @@ class UploadInitResponse {
   final int chunkSize;
   final int totalChunks;
   final DateTime? expiresAt;
+  final bool alreadyUploaded;
+  final String fileId;
+  final String imageId;
+  final String fileHash;
+  final String storageKey;
 
   UploadInitResponse({
     required this.uploadId,
     required this.chunkSize,
     required this.totalChunks,
     required this.expiresAt,
+    this.alreadyUploaded = false,
+    this.fileId = '',
+    this.imageId = '',
+    this.fileHash = '',
+    this.storageKey = '',
   });
 
   factory UploadInitResponse.fromJson(Map<String, dynamic> json) =>
       UploadInitResponse(
-        uploadId: json['upload_id'],
-        chunkSize: json['chunk_size'],
-        totalChunks: json['total_chunks'],
+        uploadId: (json['upload_id'] ?? json['id'] ?? '').toString(),
+        chunkSize: (json['chunk_size'] as num?)?.toInt() ?? 0,
+        totalChunks: (json['total_chunks'] as num?)?.toInt() ?? 0,
         expiresAt: json['expires_at'] == null
             ? null
-            : DateTime.parse(json['expires_at']),
+            : DateTime.tryParse(json['expires_at'].toString()),
+        alreadyUploaded: json['already_uploaded'] as bool? ?? false,
+        fileId: (json['file_id'] ?? '').toString(),
+        imageId: (json['image_id'] ?? '').toString(),
+        fileHash: (json['file_hash'] ?? '').toString(),
+        storageKey: (json['storage_key'] ?? '').toString(),
       );
   Map<String, dynamic> toJson() => {
     'upload_id': uploadId,
@@ -50,6 +65,11 @@ class UploadInitResponse {
     'total_chunks': totalChunks,
     // 注意：DateTime 类型必须转成字符串（推荐 ISO8601 格式），否则 jsonEncode 依然会报错
     if (expiresAt != null) 'expires_at': expiresAt!.toIso8601String(),
+    'already_uploaded': alreadyUploaded,
+    if (fileId.isNotEmpty) 'file_id': fileId,
+    if (imageId.isNotEmpty) 'image_id': imageId,
+    if (fileHash.isNotEmpty) 'file_hash': fileHash,
+    if (storageKey.isNotEmpty) 'storage_key': storageKey,
   };
 }
 
@@ -65,9 +85,9 @@ class ChunkResponse {
   });
 
   factory ChunkResponse.fromJson(Map<String, dynamic> json) => ChunkResponse(
-    received: json['received'],
-    chunkIndex: json['chunk_index'],
-    etag: json['etag'],
+    received: json['received'] as bool? ?? false,
+    chunkIndex: (json['chunk_index'] as num?)?.toInt() ?? 0,
+    etag: (json['etag'] ?? '').toString(),
   );
 }
 
@@ -92,13 +112,16 @@ class UploadProgressResponse {
 
   factory UploadProgressResponse.fromJson(Map<String, dynamic> json) =>
       UploadProgressResponse(
-        uploadId: json['upload_id'],
-        filename: json['filename'],
-        fileSize: json['file_size'],
-        totalChunks: json['total_chunks'],
-        receivedChunks: json['received_chunks'],
-        status: json['status'],
-        chunkStatuses: List<int>.from(json['chunk_statuses']),
+        uploadId: (json['upload_id'] ?? json['id'] ?? '').toString(),
+        filename: (json['filename'] ?? '').toString(),
+        fileSize: (json['file_size'] as num?)?.toInt() ?? 0,
+        totalChunks: (json['total_chunks'] as num?)?.toInt() ?? 0,
+        receivedChunks: (json['received_chunks'] as num?)?.toInt() ?? 0,
+        status: (json['status'] ?? '').toString(),
+        chunkStatuses: (json['chunk_statuses'] as List? ?? const [])
+            .whereType<num>()
+            .map((value) => value.toInt())
+            .toList(),
       );
 }
 
@@ -143,9 +166,9 @@ class MergeResponse {
   });
 
   factory MergeResponse.fromJson(Map<String, dynamic> json) => MergeResponse(
-    fileId: json['file_id'].toString(),
-    fileHash: json['file_hash'] as String? ?? '',
-    storageKey: json['storage_key'] as String? ?? '',
+    fileId: (json['file_id'] ?? json['image_id'] ?? json['id'] ?? '').toString(),
+    fileHash: (json['file_hash'] ?? json['hash'] ?? '').toString(),
+    storageKey: (json['storage_key'] ?? json['file_key'] ?? '').toString(),
     verified: json['verified'] as bool? ?? false,
   );
 }

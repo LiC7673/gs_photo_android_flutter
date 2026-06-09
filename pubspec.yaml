@@ -38,8 +38,13 @@ dependencies:
   # 状态管理
   provider: ^6.1.1
   # 相机与相册
-  camera: ^0.10.5  # 请使用最新版本
+  camera: ^0.12.0+1
   image_picker: ^1.0.4
+  sensors_plus: ^4.0.2
+  image: ^4.5.4
+  permission_handler: ^11.3.1
+  wakelock_plus: ^1.2.8
+  video_thumbnail: ^0.5.3
   # 瀑布流布局
   flutter_staggered_grid_view: ^0.7.0
   # 网络请求（用于上传图片到服务器获取 GS 模型）
@@ -65,6 +70,7 @@ dependencies:
   crypto: ^3.0.7
   archive: ^4.0.9
   shared_preferences: ^2.5.5
+  flutter_3d_controller: ^2.3.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -84,7 +90,9 @@ flutter:
     - assets/Pointcloud/
     - assets/ui_img/
     - assets/ui_img/imgs/
+
     - assets/ui_img/icon/
+    - assets/txt/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../core/state/language_state.dart';
 import 'local_web_server.dart';
 
 class SparkLocalViewerPage extends StatefulWidget {
@@ -154,6 +157,7 @@ class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LanguageState>();
     final controller = _controller;
 
     return Scaffold(
@@ -165,7 +169,10 @@ class _SparkLocalViewerPageState extends State<SparkLocalViewerPage> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => context.pop(),
         ),
-        title: const Text('素材整理', style: TextStyle(color: Colors.white)),
+        title: Text(
+          context.tr('viewer.local.title'),
+          style: const TextStyle(color: Colors.white),
+        ),
       ),
       body: SafeArea(
         child: Stack(

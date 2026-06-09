@@ -1,5 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../state/language_state.dart';
 
 class CustomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -13,6 +16,7 @@ class CustomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LanguageState>();
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -31,10 +35,18 @@ class CustomNavBar extends StatelessWidget {
           child: SafeArea(
             child: Row(
               children: [
-                _buildNavItem(0, '首页', Icons.home_rounded),
-                _buildNavItem(1, "任务", Icons.task),
-                _buildNavItem(2, '发现', Icons.explore_outlined),
-                _buildNavItem(3, '我的', Icons.person_outline),
+                _buildNavItem(0, context.tr('nav.home'), Icons.home_rounded),
+                _buildNavItem(1, context.tr('nav.tasks'), Icons.task),
+                _buildNavItem(
+                  2,
+                  context.tr('nav.discover'),
+                  Icons.explore_outlined,
+                ),
+                _buildNavItem(
+                  3,
+                  context.tr('nav.profile'),
+                  Icons.person_outline,
+                ),
               ],
             ),
           ),
